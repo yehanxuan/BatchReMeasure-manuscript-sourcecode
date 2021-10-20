@@ -280,27 +280,7 @@ oneReplicateWrap_ReMeasure = function(seedJ){
 }
 
 
-## Interface ##
-batch.correct.r1.naive1 = function(Yc1, Yt2, X, Zc1, Zt2, ind.r, Y.r) {
-  # X: vector for case/control status, 0-control, 1-case 
-  # Y: response vector 
-  
-  X = c(1: nrow(Zc1))
-  X = as.numeric(X %in% ind.r)
-  Zc2 = Zc1[ind.r, , drop = F]
-  Yc2 = Yc1[ind.r]
-  Estimate = Estimate_ReMeasure_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, ind.r, tol.c = 1e-7)
-  a0H = Estimate$a0
-  a0Var = Estimate$a0Var
-  a1H = Estimate$a1
-  betaH = Estimate$beta
-  rhoH = Estimate$rho
-  sigma1H = Estimate$sigma1
-  sigma2H = Estimate$sigma2
-  objVec = Estimate$objVec
-  return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "beta" = betaH, "rho" = rhoH, 
-              "sigma1" = sigma1H, "sigma2" = sigma2H, "objVec" = objVec))
-}
+
 
 
 
