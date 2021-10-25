@@ -113,6 +113,7 @@ Update_a = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, betaH, rhoH, sigma1H
 ObjectiveValue_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, betaH, rhoH, sigma1H, sigma2H, Index) {
   nc1 = nrow(Zc1)
   nc2 = length(Yc2)
+  nt2 = nrow(Zt2)
   mu1 = Zc1 %*% betaH
   mu2 = a0H + a1H + Zt2%*%betaH
   mu3 = a1H + Zc2%*%betaH
@@ -192,6 +193,7 @@ Variance_a0 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, sigma1H, sigma2H, rhoH, Ind
 
 Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-7, a0.Ini = NULL, a1.Ini=NULL, 
                                  rho.Ini=NULL, beta.Ini = NULL, sigma1.Ini=NULL, sigma2.Ini=NULL){
+  nc2 = nrow(Zc2)
   if ( is.null(sigma1.Ini) ) {
     sigma1.Ini = sqrt( mean( (Yc1[Index] - mean(Yc1[Index]) )^2 ) )
   } 
@@ -204,9 +206,9 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
   }
   
   if ( rho.Ini > 0.99 ) {
-    rho.Ini = 0.85
+    rho.Ini = 0.95
   } else if (rho.Ini <= -0.99) {
-    rho.Ini = -0.85
+    rho.Ini = -0.95
   }
   if ( is.null(beta.Ini) ) {
     beta.Ini = solve( t(Zc1)%*%Zc1, t(Zc1)%*%Yc1)
@@ -262,8 +264,10 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
 
 oneReplicate_ReMeasure = function(seedJ) {
   set.seed(seedJ + repID * 300)
-  source("./oneReplicate/oneReplicate-S1.R")
-  Estimate = Estimate_ReMeasure_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
+ # source("./oneReplicate/oneReplicate-S1.R")
+ # Estimate = Estimate_ReMeasure_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
+  source("./oneReplicate/oneReplicate-New-S1.R")
+  Estimate = batch.ReMeasure.S1(Y, X, Z, ind.r, Y.r)
   a0H = Estimate$a0
   a0Var = Estimate$a0Var
   a1H = Estimate$a1
@@ -272,8 +276,10 @@ oneReplicate_ReMeasure = function(seedJ) {
   sigma1H = Estimate$sigma1
   sigma2H = Estimate$sigma2
   objVec = Estimate$objVec
+  Time = Estimate$Time 
   return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "sigma1" = sigma1H,
-              "sigma2" = sigma2H, "rho" = rhoH, "beta" = betaH, "objVec" = objVec))
+              "sigma2" = sigma2H, "rho" = rhoH, 
+              "beta" = betaH,"objVec" = objVec, "Time" = Time))
 }
 
 

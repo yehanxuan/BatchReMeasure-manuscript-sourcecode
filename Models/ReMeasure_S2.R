@@ -17,10 +17,10 @@ S2_Update_rho1 = function(Zc1, Zc3, Yc1, Yc3, a3H, betaH,
   
   rho1H = cubic( c(c3, c2, c1, c0) )[1]
   rho1H = Re(rho1H) 
-  if (rho1H > 1) {
-    rho1H = 1
-  } else if (rho1H < -1 ) {
-    rho1H = -1
+  if (rho1H > 0.999) {
+    rho1H = 0.99
+  } else if (rho1H < -0.999 ) {
+    rho1H = -0.99
   }
   return(rho1H)
 }
@@ -42,10 +42,10 @@ S2_Update_rho2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, sigma2H, sig
   rho2H = cubic(c(c3, c2, c1, c0))[1]
   rho2H = Re(rho2H)
   
-  if (rho2H > 1) {
-    rho2H = 1
-  } else if (rho2H < -1) {
-    rho2H = -1
+  if (rho2H > 0.999) {
+    rho2H = 0.99
+  } else if (rho2H < -0.99) {
+    rho2H = -0.99
   }
   return(rho2H)
 }
@@ -57,11 +57,21 @@ S2_Update_sigma1 = function(Zc1, Zc3, Yc1, Yc3, a3H, betaH, rho1H, sigma3H, Inde
   mean3 = a3H + Zc3%*%betaH
   
   W1p = sum( (Yc1[Index_C] - mean1[Index_C])^2)
-  W1s = sum( (Yc1[-Index_C] - mean1[-Index_C])^2 )
+  if (length(Index) == nc1) {
+    W1s = 0
+  } else {
+    W1s = sum( (Yc1[-Index_C] - mean1[-Index_C])^2 )
+  }
+ 
   W13p = sum( (Yc1[Index_C] - mean1[Index_C])*(Yc3 - mean3) )
-  c0 = -W1p/(nc1*(1 - rho1H^2)) - W1s/nc1
-  c1 = rho1H*W13p/(nc1*(1 - rho1H^2)*sigma3H)
-  c2 = 1
+  if (rho1H > 0.999) {
+    rho1H = 0.99
+  } else if (rho1H < -0.999) {
+    rho1H = -0.99
+  }
+  c0 = -W1p/nc1 - (1 - rho1H^2)*W1s/nc1
+  c1 = rho1H*W13p/(nc1*sigma3H)
+  c2 = (1 - rho1H^2)
   Roots = Re(polyroot(c(c0, c1, c2)))
   sigma1H = Roots[Roots > 0 ]
   return(sigma1H)
@@ -74,11 +84,20 @@ S2_Update_sigma2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, rho2H, sig
   mean4 = a0H + a3H + Zt3%*%betaH
   
   W2p = sum( (Yt2[Index_T] - mean2[Index_T])^2 )
-  W2s = sum( (Yt2[-Index_T] - mean2[-Index_T])^2 )
+  if (length(Index_T) == nt2) {
+    W2s = 0
+  } else {
+    W2s = sum( (Yt2[-Index_T] - mean2[-Index_T])^2 )  
+  }
   W24p = sum( (Yt2[Index_T] - mean2[Index_T])*(Yt3 - mean4) )
-  c0 = -W2p/(nt2*(1 - rho2H^2)) - W2s/nt2
-  c1 = rho2H*W24p/(nt2*(1 - rho2H^2)*sigma3H)
-  c2 = 1
+  if (rho2H > 0.999) {
+    rho2H = 0.99
+  } else if (rho2H < -0.999) {
+    rho2H = -0.99
+  }
+  c0 = -W2p/nt2 - (1 - rho2H^2)*W2s/nt2
+  c1 = rho2H*W24p/(nt2*sigma3H)
+  c2 = (1 - rho2H^2)
   Roots = Re(polyroot(c(c0, c1, c2)))
   sigma2H = Roots[Roots > 0]
   return(sigma2H)

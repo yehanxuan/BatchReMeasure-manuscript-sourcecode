@@ -115,6 +115,7 @@ Ignore_Update_a0 = function(Zt2, Yt2, betaH) {
 Ignore_Objective_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, betaH, rhoH, sigma1H, sigma2H, Index) {
   nc1 = length(Yc1)
   nc2 = length(Yc2) 
+  nt2 = nrow(Zt2)
   mu1 = Zc1 %*% betaH
   mu2 = a0H + Zt2%*% betaH
   mu3 = Zc2%*%betaH 
@@ -142,6 +143,7 @@ Ignore_Objective_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, betaH, rhoH, s
 
 Variance_a0_Ignore = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, rhoH, sigma1H, sigma2H, Index) {
   nc1 = nrow(Zc1)
+  nt2 = nrow(Zt2)
   Zt2_c = t( t(Zt2) - colMeans(Zt2))
   if (length(Index) == nc1) {
     Cov = ( 1/(sigma1H^2*(1-rhoH^2)) - rhoH/(sigma1H*sigma2H*(1 - rhoH^2)) )*t(Zc2)%*%Zc2 +
@@ -188,8 +190,9 @@ Variance_a0_Ignore = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, rhoH, sigma1H, sigma
 }
 
 
-Estimate_Ignore_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-5,
+Estimate_Ignore_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-7,
                               a0.Ini = NULL, beta.Ini = NULL, rho.Ini = NULL, sigma1.Ini = NULL, sigma2.Ini = NULL){
+  nc2 = nrow(Zc2)
   if ( is.null(sigma1.Ini) ) {
     sigma1.Ini = sqrt( mean( (Yc1[Index] - mean(Yc1[Index]) )^2 ) )
   } 
@@ -222,6 +225,8 @@ Estimate_Ignore_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-5,
   objVec = obj_old 
   i = 0
   gap = 1e7
+  
+  start = proc.time()[1]
   while ( (i < 100)&&(gap > tol.c) ) {
     i = i + 1
     sigma1H = Ignore_Update_sigma1(Zc1, Zc2, Yc1, Yc2, a0H, betaH, rhoH, sigma2H, Index)
@@ -235,16 +240,20 @@ Estimate_Ignore_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-5,
     obj_old = obj_new
   }
   
+  Time = proc.time()[1] - start
   a0Var = Variance_a0_Ignore(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, rhoH, sigma1H, sigma2H, Index)
-  return(list("a0" = a0H, "a0Var" = a0Var, "beta" = betaH, "rho" = rhoH, "sigma1" = sigma1H, "sigma2" = sigma2H, "objVec" = objVec))
+  return(list("a0" = a0H, "a0Var" = a0Var, "beta" = betaH, "rho" = rhoH, "sigma1" = sigma1H, "sigma2" = sigma2H, "objVec" = objVec,
+              "Time" = Time))
 }
 
 
 
 oneReplicate_Ignore = function(seedJ) {
   set.seed(seedJ + repID * 300)
-  source("./oneReplicate/oneReplicate-S1.R")
-  Estimate = Estimate_Ignore_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
+  #source("./oneReplicate/oneReplicate-S1.R")
+  #Estimate = Estimate_Ignore_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
+  source("./oneReplicate/oneReplicate-New-S1.R")
+  Estimate = batch.Ignore.S1(Y, X, Z, ind.r, Y.r)
   a0H = Estimate$a0
   a0Var = Estimate$a0Var
   a1H = NULL
@@ -253,13 +262,39 @@ oneReplicate_Ignore = function(seedJ) {
   sigma1H = Estimate$sigma1
   sigma2H = Estimate$sigma2
   objVec = Estimate$objVec
+  Time = Estimate$Time
   return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "sigma1" = sigma1H,
-              "sigma2" = sigma2H, "rho" = rhoH, "beta"= betaH, "objVec" = objVec))
+              "sigma2" = sigma2H, "rho" = rhoH, "beta"= betaH, "objVec" = objVec, "Time" = Time))
 }
 
 oneReplicateWrap_Ignore = function(seedJ) {
   eval = oneReplicate_Ignore(seedJ) 
   return(eval)
+}
+
+
+batch.Ignore.S1 = function(Y, X, Z, ind.r, Y.r) {
+  ind0 <- X == 0
+  ind1 <- X == 1
+  Yc1 <- Y[ind0]
+  Yt2 <- Y[ind1]
+  Zc1 <- Z[ind0, , drop = F]
+  Zt2 <- Z[ind1, , drop = F]
+  
+  Zc2 = Zc1[ind.r, , drop = F]
+  Yc2 = Y.r
+  Estimate = Estimate_Ignore_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, ind.r)
+  a0H = Estimate$a0
+  a0Var = Estimate$a0Var
+  betaH = Estimate$beta
+  rhoH = Estimate$rho
+  sigma1H = Estimate$sigma1
+  sigma2H = Estimate$sigma2
+  objVec = Estimate$objVec
+  pv <- 2 * stats::pnorm(-abs(a0H / sqrt(a0Var))) 
+  Time = Estimate$Time
+  return(list("a0" = a0H, "a0Var" = a0Var, "beta" = betaH, "rho" = rhoH, "p.value" = pv,
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "objVec" = objVec, "Time" = Time))
 }
 
 
