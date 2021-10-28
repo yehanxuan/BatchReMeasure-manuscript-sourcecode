@@ -186,6 +186,10 @@ Variance_a0 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, sigma1H, sigma2H, rhoH, Ind
   Var = (sigma1H^2)*( t(a)%*%a + t(d)%*%d ) + 
     (sigma2H^2)*(t(b)%*%b + t(c)%*%c) + 2*rhoH*sigma1H*sigma2H*t(a)%*%c
   
+  ### Hindsight variance 
+  #Var = (sigma1^2)*( t(a)%*%a + t(d)%*%d ) + 
+  #  (sigma2^2)*(t(b)%*%b + t(c)%*%c) + 2*rho*sigma1*sigma2*t(a)%*%c
+  
   Var = as.numeric(Var)
   return(Var)
 }
@@ -264,8 +268,8 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
 
 oneReplicate_ReMeasure = function(seedJ) {
   set.seed(seedJ + repID * 300)
- # source("./oneReplicate/oneReplicate-S1.R")
- # Estimate = Estimate_ReMeasure_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
+  #source("./oneReplicate/oneReplicate-S1.R")
+ #Estimate = Estimate_ReMeasure_S1(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index)
   source("./oneReplicate/oneReplicate-New-S1.R")
   Estimate = batch.ReMeasure.S1(Y, X, Z, ind.r, Y.r)
   a0H = Estimate$a0

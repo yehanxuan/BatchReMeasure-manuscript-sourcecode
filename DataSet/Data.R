@@ -7,7 +7,7 @@
 # a0 treatment effect 
 # a1 Batch effect
 library(MASS)
-Generate_S1 = function(nc1, nt2, nc2, p, beta, a0, a1, sigma1, sigma2, rho) {
+Generate_S1 = function(nc1, nt2, nc2, p, beta, a0, a1, sigma1, sigma2, rho, NoiseType = "Gaussian") {
   if (nc1 < nc2){
     cat("The remeasure size should be smaller than the original control size")
     break()
@@ -22,12 +22,27 @@ Generate_S1 = function(nc1, nt2, nc2, p, beta, a0, a1, sigma1, sigma2, rho) {
   #Sigma = matrix(c(sigma1^2, rho*sigma1*sigma2, rho*sigma1*sigma2, sigma2^2), 2, 2)
   #etemp = mvrnorm(n = nc2, mu = c(0,0), Sigma = Sigma)
   #ec1 = c(etemp[, 1])
-  ec1 = rnorm(nc1, mean = 0, sd = sigma1)
+  if (NoiseType == "Gaussian") {
+    ec1 = rnorm(nc1, mean = 0, sd = sigma1)
+    et2 = rnorm(nt2, mean = 0, sd = sigma2)
+    ecInd = rnorm(nc2, mean = 0, sd = sigma1)
+    ec2 = (rho * ec1[Index] + sqrt(1 - rho^2) * ecInd) * sigma2/sigma1
+  } else if (NoiseType == "t") {
+    ## We use t-distribution of df = 6
+    ec1 = rt(nc1, df = 6)*sigma1/sqrt(3/2)
+    et2 = rt(nt2, df = 6)*sigma2/sqrt(3/2)
+    ecInd = rt(nc2, df = 6)*sigma1/sqrt(3/2)
+    ec2 = (rho * ec1[Index] + sqrt(1 - rho^2) * ecInd) * sigma2/sigma1
+  } else if (NoiseType == "gamma") {
+    shape = 2
+    scale = 1
+    ec1 = ( rgamma(nc1, shape = shape, scale = scale) - shape*scale )*sigma1/(sqrt(shape)*scale)
+    et2 = (rgamma(nt2, shape = shape, scale = scale) - shape*scale)*sigma2/(sqrt(shape)*scale)
+    ecInd = (rgamma(nc2, shape = shape, scale = scale) - shape*scale)*sigma1/(sqrt(shape)*scale)
+    ec2 = (rho * ec1[Index] + sqrt(1 - rho^2) * ecInd) * sigma2/sigma1
+  }
   Yc1 = ec1 + Zc1%*%beta
-  et2 = rnorm(nt2, mean = 0, sd = sigma2)
   Yt2 = a0 + a1 + et2 + Zt2%*%beta
-  ecInd = rnorm(nc2, mean = 0, sd = sigma1)
-  ec2 = (rho * ec1[Index] + sqrt(1 - rho^2) * ecInd) * sigma2/sigma1
   Yc2 = a1 + ec2 + Zc2%*%beta
   return(list("Yc1" = Yc1, "Yt2" = Yt2, "Yc2" = Yc2, "Zc1" = Zc1, "Zt2" = Zt2, "Zc2" = Zc2, "Index" = Index))
 }
