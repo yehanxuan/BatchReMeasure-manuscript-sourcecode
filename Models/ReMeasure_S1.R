@@ -201,8 +201,17 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
   if ( is.null(sigma1.Ini) ) {
     sigma1.Ini = sqrt( mean( (Yc1[Index] - mean(Yc1[Index]) )^2 ) )
   } 
+  
+  if (sigma1.Ini <= 0.001 ){
+    sigma1.Ini = 0.5
+  }
+  
   if ( is.null(sigma2.Ini) ) {
     sigma2.Ini = sqrt( mean( (Yc2 - mean(Yc2))^2 ) )
+  }
+  
+  if (sigma2.Ini <= 0.001) {
+    sigma2.Ini = 0.5
   }
   if ( is.null(rho.Ini) ) {
     # All use Control in case rho larger than 1 
