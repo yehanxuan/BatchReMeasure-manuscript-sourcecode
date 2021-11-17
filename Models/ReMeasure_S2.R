@@ -507,5 +507,40 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
 }
 
 
+batch.ReMeasure.S2 = function(Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2) {
+  ind0 <- X == 0
+  ind1 <- X == 1
+  Yc1 <- Y[ind0]
+  Yt2 <- Y[ind1]
+  Zc1 <- Z[ind0, , drop = F]
+  Zt2 <- Z[ind1, , drop = F]
+  
+  Zc3 = Zc1[ind.r1, , drop = F]
+  Yc3 = Y.r1
+  Zt3 = Zt2[ind.r2, , drop = F]
+  Yt3 = Y.r2
+  
+  Estimate = Estimate_ReMeasure_S2(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, ind.r1, ind.r2,
+                                   tol.c = 1e-7)
+  a0H = Estimate$a0
+  a0Var = Estimate$a0Var
+  a1H = Estimate$a1
+  a3H = Estimate$a3
+  betaH = Estimate$beta
+  rho1H = Estimate$rho1
+  rho2H = Estimate$rho2 
+  sigma1H = Estimate$sigma1
+  sigma2H = Estimate$sigma2
+  sigma3H = Estimate$sigma3
+  objVec = Estimate$objVec
+  pv <- 2 * stats::pnorm(-abs(a0H / sqrt(a0Var))) 
+  Time = Estimate$Time
+  return(list("a0" = a0H, "a0Var" = a0Var, "a1"=a1H, "a3"=a3H, "beta" = betaH,
+              "rho1" = rho1H, "rho2" = rho2H, "p.value" = pv, 
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H, "objVec" = objVec, "Time" = Time))
+}
+
+
+
 
 
