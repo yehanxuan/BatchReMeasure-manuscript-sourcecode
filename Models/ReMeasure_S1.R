@@ -246,7 +246,7 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
   i = 0
   gap = 1e7
   
-  start = proc.time()[1]
+  start_S1 = proc.time()[1]
   while ( (i < 100)&&(gap > tol.c) ) {
     i = i + 1
     sigma1H = Update_sigma1(Zc1, Zc2, Yc1, Yc2, a0H, a1H, betaH, rhoH, sigma2H, Index)
@@ -265,12 +265,12 @@ Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e
     obj_old = obj_new 
   }
   
-  Time = proc.time()[1] - start
+  Time_S1 = proc.time()[1] - start_S1
 
   a0Var = Variance_a0(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, sigma1H, sigma2H, rhoH, Index)
   
   return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "beta" = betaH, "rho" = rhoH, 
-              "sigma1" = sigma1H, "sigma2" = sigma2H, "Time" = Time, "objVec" = objVec))
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "Time" = Time_S1, "objVec" = objVec))
 }
 
 
