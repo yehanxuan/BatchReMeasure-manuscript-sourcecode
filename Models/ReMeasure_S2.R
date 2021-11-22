@@ -244,6 +244,7 @@ S2_Update_a3 = function(Zc1, Yc1, Zc3, Yc3, betaH, rho1H, sigma1H, sigma3H, Inde
 S2_Update_b = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H, 
                        sigma1H, sigma2H, sigma3H) {
   nc1 = nrow(Zc1)
+  nt2 = nrow(Zt2)
   nc3 = nrow(Zc3)
   nt3 = nrow(Zt3)
   
@@ -257,7 +258,7 @@ S2_Update_b = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,
   R2 = rho2H*sigma3H/sigma2H
   
   Zt3c =  rep(1, nt3)%*% t(rep(1, nt3))%*%Zt3/nt3
-  Cov3 =  (1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))  ) *
+  Cov3 =  ( 1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))  ) *
     t(Zt3) %*% (Zt3 - nt3*Zt3c/nt2 ) 
   
   Cov3 = Cov3 + (1 - R2)*t(Zt3)%*%( Zt3 - Zt3c + R2*(1 - ratioT)*Zt3c )/(sigma3H^2*(1 - rho2H^2))    
@@ -268,21 +269,35 @@ S2_Update_b = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,
   } else {
     Zt2cs =  Zt2[-Index_T, , drop = F]
     Cov4 = t(Zt2cs)%*%Zt2cs/(sigma3H^2)  # sigma2H??
-    Cov5 = (1 - ratioT)*t(Zt3)%*%rep(1, nt3)%*%colMeans(Zt2cs)/(sigma2H^2)
+    Cov5 = -(1 - ratioT)*t(Zt3)%*%rep(1, nt3)%*%colMeans(Zt2cs)/(sigma2H^2)
   }
   
-  Cov = Cov1 + Cov2 + Cov3 + Cov4 - Cov5 
+  Cov = Cov1 + Cov2 + Cov3 + Cov4 + Cov5 
   
-  Cor1 = t(Zc3)%*%Yc1[Index_C]/(sigma1H^2) + t(Zc1[-Index_C, , drop = F]) %*% Yc1[-Index_C]/(sigma1H^2)+
+  if (nc3 == nc1) {
+    Cor1 = t(Zc3)%*%Yc1[Index_C]/(sigma1H^2) + 
     (1 - R1) * t(Zc3)%*% ( Yc3 - mean(Yc3) - R1*(Yc1[Index_C] - mean(Yc1[Index_C]) ) )/(sigma3H^2*(1 - rho1H^2))
+  } else {
+    Cor1 = t(Zc3)%*%Yc1[Index_C]/(sigma1H^2) + t(Zc1[-Index_C, , drop = F]) %*% Yc1[-Index_C]/(sigma1H^2) + 
+    (1 - R1) * t(Zc3)%*% ( Yc3 - mean(Yc3) - R1*(Yc1[Index_C] - mean(Yc1[Index_C]) ) )/(sigma3H^2*(1 - rho1H^2))
+  }
+  
   
   Yt2s_mean = mean(Yt2[Index_T]) 
-  Yt2un_mean = mean(Yt2[-Index_T])
+  if (nt3 == nt2) {
+    Cor2 =  t(Zt3)%*%(Yt2[Index_T] - ratioT*Yt2s_mean ) *
+      (1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))) 
+    Cor3 = (1 - R2) * t(Zt3) %*% (Yt3 - mean(Yt3) + R2*(1 - ratioT)*Yt2s_mean )/(sigma3H^2*(1 - rho2H^2))
+    Cor4 = 0
+  } else {
+    Yt2un_mean = mean(Yt2[-Index_T])
+    Cor2 = ( t(Zt3)%*%(Yt2[Index_T] - ratioT*Yt2s_mean - (1-ratioT)*Yt2un_mean)) *
+      (1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))) 
+    Cor3 = (1 - R2) * t(Zt3) %*% (Yt3 - mean(Yt3) + R2*(1 - ratioT)*(Yt2s_mean - Yt2un_mean) )/(sigma3H^2*(1 - rho2H^2))
+    Cor4 = t(Zt2[-Index_T, , drop = F])%*%Yt2[-Index_T]/(sigma3H^2)
+  }
   
-  Cor2 = ( t(Zt3)%*%(Yt2[Index_T] - ratioT*Yt2s_mean - (1-ratioT)*Yt2un_mean)) *
-    (1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))) 
-  Cor3 = (1 - R2) * t(Zt3) %*% (Yt3 - mean(Yt3) + R2*(1 - ratioT)*(Yt2s_mean - Yt2un_mean) )/(sigma3H^2*(1 - rho2H^2))
-  Cor4 = t(Zt2[-Index_T, , drop = F])%*%Yt2[-Index_T]/(sigma3H^2)
+  
   Cor = Cor1 + Cor2 + Cor3 + Cor4
   betaH = solve(Cov, Cor)
   return(betaH)
@@ -325,6 +340,8 @@ ObjectiveValue_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, a0H,
                              rho1H, rho2H, sigma1H, sigma2H, sigma3H, Index_C, Index_T) {
   nc3 = nrow(Zc3)
   nt3 = nrow(Zt3)
+  nc1 = nrow(Zc1)
+  nt2 = nrow(Zt2)
   mu1 = Zc1 %*% betaH
   mu2 = a0H + a1H + Zt2%*%betaH
   mu3 = a3H + Zc3%*%betaH
@@ -339,14 +356,24 @@ ObjectiveValue_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, a0H,
     ( t(Yc1Scale[Index_C])%*%Yc1Scale[Index_C] - 2*rho1H*t(Yc1Scale[Index_C])%*%Yc3Scale +
     t(Yc3Scale)%*%Yc3Scale ) / (2*(1-rho1H^2))
   
-  part2 = (nc1 - nc3)*log(sigma1H) + t(Yc1Scale[-Index_C])%*%Yc1Scale[-Index_C]/2
+  if (nc3 == nc1) {
+    part2 = 0
+  } else {
+    part2 = (nc1 - nc3)*log(sigma1H) + t(Yc1Scale[-Index_C])%*%Yc1Scale[-Index_C]/2
+  }
+  
   
   part3 = nt3*log(sigma2H*sigma3H) + nt3*log( 1- rho2H^2)/2 + 
     ( t(Yt2Scale[Index_T])%*%Yt2Scale[Index_T] - 2*rho2H*t(Yt2Scale[Index_T])%*%Yt3Scale +
     t(Yt3Scale)%*%Yt3Scale )/ (2*(1 - rho2H^2))
   
-  part4 = (nt2 - nt3)*log(sigma2H) + 
-    t(Yt2Scale[-Index_T]) %*% Yt2Scale[-Index_T]
+  if (nt3 == nt2) {
+    part4 = 0
+  } else {
+    part4 = (nt2 - nt3)*log(sigma2H) + 
+      t(Yt2Scale[-Index_T]) %*% Yt2Scale[-Index_T]
+  }
+  
   
   obj = part1 + part2 + part3 + part4
   
@@ -360,14 +387,16 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
   nc3 = nrow(Zc3)
   nt3 = nrow(Zt3)
   
-  Ztilde1 = (1 - rho1H*sigma3H/sigma1H)*Zc3
-  Cov1 = t(Zc1)%*%Zc1/(sigma1H^2)
-  Cov2 = t(Ztilde1)%*%t(t(Ztilde1) - colMeans(Ztilde1) )/( (sigma3H^2)*(1 - rho1H^2) )
+  
   
   ratioC = nc3/nc1
   ratioT = nt3/nt2
   R1 = rho1H*sigma3H/sigma1H
   R2 = rho2H*sigma3H/sigma2H
+  
+  Ztilde1 = (1 - R1)*Zc3
+  Cov1 = t(Zc1)%*%Zc1/(sigma1H^2)
+  Cov2 = t(Ztilde1)%*%t(t(Ztilde1) - colMeans(Ztilde1) )/( (sigma3H^2)*(1 - rho1H^2) )
   
   # Cov3 = (1 - ratioT)/(sigma2H^2)*t(Zt3)%*%Zt3
   # Cov3 = Cov3 + ( (1 - rho2H*sigma3H/sigma2H)^2*(1 - ratioC)/(sigma3H^2*(1 - rho2H^2)) + 
@@ -385,10 +414,10 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
   } else {
     Zt2cs =  Zt2[-Index_T, , drop = F]
     Cov4 = t(Zt2cs)%*%Zt2cs/(sigma3H^2)  # sigma2H??
-    Cov5 = (1 - ratioT)*t(Zt3)%*%rep(1, nt3)%*%colMeans(Zt2cs)/(sigma2H^2)
+    Cov5 = -(1 - ratioT)*t(Zt3)%*%rep(1, nt3)%*%colMeans(Zt2cs)/(sigma2H^2)
   }
   
-  S = Cov1 + Cov2 + Cov3 + Cov4 - Cov5 
+  S = Cov1 + Cov2 + Cov3 + Cov4 + Cov5 
   
   
   
@@ -422,7 +451,7 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
   } else {
     D0 = (1 - ratioT)*t(Zt3)%*%( rep(1, nt3)%*%t(rep(1, nt2 - nt3))/(nt2 - nt3) )*
       (-1/(sigma2H^2*(1-rho2H^2)) + rho2H/(sigma2H*sigma3H*(1 - rho2H^2)))
-    D0 = D0 + (1 - R2)*R2*(1 - ratioT)*t(Zt3)%*%( rep(1, nt3)%*%t(rep(1, nt2 - nt3))/(nt2 - nt3) )/
+    D0 = D0 - (1 - R2)*R2*(1 - ratioT)*t(Zt3)%*%( rep(1, nt3)%*%t(rep(1, nt2 - nt3))/(nt2 - nt3) )/
       ( sigma3H^2*(1 - rho2H^2) )
     D = solve(S, D0)
     d = R2*(1 - ratioT)*rep(1, nt2 - nt3)/(nt2 - nt3) - t(D)%*%k
