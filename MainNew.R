@@ -7,7 +7,8 @@ source("./Models/Batch2Only.R")
 source("./Models/IgnoreBatch.R")
 source("./Models/Bootstrap.R")
 source("./Models/ReMeasureWrap_S1.R")
-
+source("./Models/LSmodel.R")
+  
 args <- commandArgs(trailingOnly = TRUE)
 method = args[1]
 n = as.numeric(args[2])
@@ -18,18 +19,18 @@ a0 = as.numeric(args[6])
 a1 = as.numeric(args[7])
 repID = as.numeric(args[8])
 
-method = "ReMeasure"
-n = 100
-n1 = 10
-r1 = 0.5
-r2 = 1
-a0 = 0
-a1 = 0
-repID = 2
+# method = "LS"
+# n = 100
+# n1 = 50
+# r1 = 0.5
+# r2 = 0.3
+# a0 = 0
+# a1 = 0.5
+# repID = 2
 
-#source(paste0("./oneReplicate/oneReplicate-New-S1.R"))
+source(paste0("./oneReplicate/oneReplicate-New-S1.R"))
 
-savePath = paste0("./simuData/S1-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-nt2-", n/2,"-nc2-", n1 ,"-r1-",
+savePath = paste0("./S1Data/S1-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-nt2-", n/2,"-nc2-", n1 ,"-r1-",
                   r1,"-r2-", r2,"-a0-", a0, "-a1-", a1, ".RData")
 
 
@@ -47,6 +48,7 @@ result8 = list()
 result9 = list()
 result10 = list()
 result11 = list()
+result12 = list()
 if (method == "Ignore") {
   for (i in 1:ceiling(maxIter/nCPUS)){
     print(i)
@@ -91,7 +93,7 @@ if (method == "Ignore") {
     sBegin = (i-1)*nCPUS +1
     sEnd = min(i*nCPUS, maxIter)
     seedSeq = seq(sBegin, sEnd, by = 1)
-    tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_OnlyBathc2)
+    tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_OnlyBatch2)
     sfStop()
     tmp = Filter(function(x) length(x) >= 3, tmp)
     tmp1 = lapply(tmp, function(x) x[[1]])
@@ -257,12 +259,48 @@ if (method == "Ignore") {
     result10 = c(result10, tmp10)
     result11 = c(result11, tmp11)
   }
+} else if (method == "LS") {
+  for (i in 1:ceiling(maxIter/nCPUS)){
+    print(i)
+    sfInit(parallel = TRUE, cpus = nCPUS)
+    sfExportAll()
+    sfLibrary(RConics)
+    sfLibrary(MASS)
+    sfLibrary(mvtnorm)
+    sBegin = (i-1)*nCPUS +1
+    sEnd = min(i*nCPUS, maxIter)
+    seedSeq = seq(sBegin, sEnd, by = 1)
+    tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_LS)
+    sfStop()
+    tmp = Filter(function(x) length(x) >= 3, tmp)
+    tmp1 = lapply(tmp, function(x) x[[1]])
+    tmp2 = lapply(tmp, function(x) x[[2]])
+    tmp3 = lapply(tmp, function(x) x[[3]])
+    tmp4 = lapply(tmp, function(x) x[[4]])
+    tmp5 = lapply(tmp, function(x) x[[5]])
+    tmp6 = lapply(tmp, function(x) x[[6]])
+    tmp7 = lapply(tmp, function(x) x[[7]])
+    tmp8 = lapply(tmp, function(x) x[[8]])
+    tmp9 = lapply(tmp, function(x) x[[9]])
+    tmp12 = lapply(tmp, function(x) x[[10]])
+
+    result1 = c(result1, tmp1)
+    result2 = c(result2, tmp2)
+    result3 = c(result3, tmp3)
+    result4 = c(result4, tmp4)
+    result5 = c(result5, tmp5)
+    result6 = c(result6, tmp6)
+    result7 = c(result7, tmp7)
+    result8 = c(result8, tmp8)
+    result9 = c(result9, tmp9)
+    result12 = c(result12, tmp12)
+  }
 }
 
 Final = list("a0" = result1, "a0Var"= result2, "a1"=result3, "sigma1"=result4,
              "sigma2" = result5, "rho" = result6, "beta"=result7, "objVec"=result8,
-             "Time" = result9, "ztest" = result10, "ztestb" = result11)
+             "Time" = result9, "ztest" = result10, "ztestb" = result11, "p.value" = result12)
 
-#save(Final, file = savePath)
+save(Final, file = savePath)
 
 

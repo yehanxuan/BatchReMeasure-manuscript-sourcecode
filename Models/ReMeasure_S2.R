@@ -9,7 +9,7 @@ S2_Update_rho1 = function(Zc1, Zc3, Yc1, Yc3, a3H, betaH,
   W1p = sum( (Yc1[Index_C] - mean1[Index_C])^2 )
   W3p = sum( (Yc3 - mean3)^2 )
   W13p = sum( (Yc1[Index_C] - mean1[Index_C])*(Yc3 - mean3) )
-  # Solve quadratic equation
+  # Solve cubic equation
   c3 = 1
   c2 = -W13p/(nc3*sigma1H*sigma3H)
   c1 = W1p/(nc3*sigma1H*sigma1H) + W3p/(nc3*sigma3H*sigma3H) - 1
@@ -91,9 +91,9 @@ S2_Update_sigma2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, rho2H, sig
   }
   W24p = sum( (Yt2[Index_T] - mean2[Index_T])*(Yt3 - mean4) )
   if (rho2H > 0.999) {
-    rho2H = 0.99
+    rho2H = 0.97
   } else if (rho2H < -0.999) {
-    rho2H = -0.99
+    rho2H = -0.97
   }
   c0 = -W2p/nt2 - (1 - rho2H^2)*W2s/nt2
   c1 = rho2H*W24p/(nt2*sigma3H)
@@ -130,7 +130,7 @@ S2_Update_sigma3 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, a0H, a1H, a3
   return(sigma3H)
 }
 
-S2_Update_a0 = function(Zc1, Zt2, Zt3, Yc1, Yt2, Yt3, betaH, rho1H, rho2H, sigma1H, sigma2H, sigma3H, Index_C, Index_T) {
+S2_Update_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, rho1H, rho2H, sigma1H, sigma2H, sigma3H, Index_C, Index_T) {
   nt3 = nrow(Zt3)
   nt2 = nrow(Zt2)
   R1p = mean(Yc1[Index_C] - Zc1[Index_C, , drop = F]%*%betaH)
@@ -212,7 +212,6 @@ S2_Update_a1 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, rho1H, rh
 
 S2_Update_a3 = function(Zc1, Yc1, Zc3, Yc3, betaH, rho1H, sigma1H, sigma3H, Index_C){
   nc3 = nrow(Zc3)
-  nt3 = nrow(Zt3)
   R1p = mean(Yc1[Index_C] - Zc1[Index_C, , drop = F]%*%betaH)
   R3p = mean(Yc3 - Zc3%*%betaH)
   a3H = R3p - rho1H*sigma3H*R1p/sigma1H
@@ -241,8 +240,8 @@ S2_Update_a3 = function(Zc1, Yc1, Zc3, Yc3, betaH, rho1H, sigma1H, sigma3H, Inde
 # S2_Update_b = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,  )
 
 
-S2_Update_b = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H, 
-                       sigma1H, sigma2H, sigma3H) {
+S2_Update_beta = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H, 
+                       sigma1H, sigma2H, sigma3H, Index_C, Index_T) {
   nc1 = nrow(Zc1)
   nt2 = nrow(Zt2)
   nc3 = nrow(Zc3)
@@ -473,13 +472,13 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
   e = -rep(1, nc3)/nc3 - t(E)%*%k
   f = rep(1, nt3)/nt3 - t(G)%*%k
   
-  Var = (sigma1H^2) * (t(a)%*%a + t(b)%*%b) + 
+  Var = (sigma1H^2) * (t(a)%*%a + t(b)%*%b) +
     (sigma2H^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3H^2) * (t(e)%*%e + t(f)%*%f)+
     2*rho1H*sigma1H*sigma3H*(t(a)%*%e) + 2*rho2H*sigma2H*sigma3H*(t(c)%*%f)
   
-#  Var = (sigma1^2) * (t(a)%*%a + t(b)%*%b) + 
-#    (sigma2^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3^2) * (t(e)%*%e + t(f)%*%f)+
-#    2*rho1*sigma1*sigma3*(t(a)%*%e) + 2*rho2*sigma2*sigma3*(t(c)%*%f)
+ # Var = (sigma1^2) * (t(a)%*%a + t(b)%*%b) +
+ #   (sigma2^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3^2) * (t(e)%*%e + t(f)%*%f)+
+ #   2*rho1*sigma1*sigma3*(t(a)%*%e) + 2*rho2*sigma2*sigma3*(t(c)%*%f)
   
   Var = as.numeric(Var)
   return(Var)
@@ -570,9 +569,9 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
     rho2H = S2_Update_rho2(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, sigma2H, sigma3H, Index_T)
     # betaH = S2_Update_b(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, a0H, a1H, a3H, 
     #                     rho1H, rho2H, sigma1H, sigma2H, sigma3H)
-    betaH = S2_Update_b(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,
-                        sigma1H, sigma2H, sigma3H)
-    a0H = S2_Update_a0(Zc1, Zt2, Zt3, Yc1, Yt2, Yt3, betaH, rho1H, rho2H, sigma1H, sigma2H,
+    betaH = S2_Update_beta(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,
+                        sigma1H, sigma2H, sigma3H, Index_C, Index_T)
+    a0H = S2_Update_a0(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, rho1H, rho2H, sigma1H, sigma2H,
                        sigma3H, Index_C, Index_T)
     a1H = S2_Update_a1(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, rho1H, rho2H, sigma1H, sigma2H,
                        sigma3H, Index_C, Index_T)
@@ -594,6 +593,35 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
   return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "a3" = a3H, "beta" = betaH,
               "rho1" = rho1H, "rho2" = rho2H, "sigma1" = sigma1H, "sigma2" = sigma2H,
               "sigma3" = sigma3H, "Time" = Time_S2, "objVec" = objVec) )
+}
+
+
+oneReplicate_ReMeasure_S2 = function(seedJ) {
+  set.seed(seedJ + repID * 300)
+  source("./oneReplicate/oneReplicate-New-S2.R")
+  Estimate = batch.ReMeasure.S2(Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2)
+  a0H = Estimate$a0
+  a0Var = Estimate$a0Var
+  a1H = Estimate$a1
+  a3H = Estimate$a3
+  betaH = Estimate$beta
+  rho1H = Estimate$rho1
+  rho2H = Estimate$rho2
+  sigma1H = Estimate$sigma1
+  sigma2H = Estimate$sigma2
+  sigma3H = Estimate$sigma3
+  objVec = Estimate$objVec
+  pv <- 2 * stats::pnorm(-abs(a0H / sqrt(a0Var)))
+  Time = Estimate$Time 
+  return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "a3" = a3H,
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H,
+              "rho1" = rho1H, "rho2" = rho2H, 
+              "beta" = betaH,"objVec" = objVec, "Time" = Time, "p.value" = pv))
+}
+
+oneReplicateWrap_ReMeasure_S2 = function(seedJ) {
+  eval = oneReplicate_ReMeasure_S2(seedJ)
+  return(eval)
 }
 
 
@@ -629,6 +657,8 @@ batch.ReMeasure.S2 = function(Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2) {
               "rho1" = rho1H, "rho2" = rho2H, "p.value" = pv, 
               "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H, "objVec" = objVec, "Time" = Time))
 }
+
+
 
 
 

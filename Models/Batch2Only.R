@@ -65,7 +65,7 @@ oneReplicate_OnlyBatch2 = function(seedJ) {
 }
 
 
-oneReplicateWrap_OnlyBathc2 = function(seedJ) {
+oneReplicateWrap_OnlyBatch2 = function(seedJ) {
   eval = oneReplicate_OnlyBatch2(seedJ)
   return(eval)
 }
