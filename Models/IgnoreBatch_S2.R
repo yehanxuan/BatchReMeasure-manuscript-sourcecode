@@ -203,16 +203,20 @@ S2_Ignore_Update_beta = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     t(Zc3)%*%Yc3*Sc2
 
  
-  Cor3 = (t(Zt3) - wZ)%*%
-    ( St1*diag(nt3) - (St1 + St2)*w1*rep(1, nt3)%*%t(rep(1, nt3))/nt3 )%*%Yt2[Index_T]
-  Cor4 = (t(Zt3) - wZ)%*%
-    (St2*diag(nt3) - (St1 + St2)*w2*rep(1, nt3)%*%t(rep(1, nt3))/nt3 )%*%Yt3
+  Cor3 =(t(Zt3) - wZ)%*%(St1*diag(nt3) - (St1 + St2)*w1*rep(1, nt3)%*%t(rep(1, nt3))/nt3) %*%Yt2[Index_T]
+  
+  Cor4 = ( (t(Zt3) - wZ)%*%(St2*diag(nt3) - (St1 + St2)*w2*rep(1, nt3)%*%t(rep(1, nt3))/nt3 ) )%*%Yt3
+  
+  if (nt3 != nt2) {
+    Cor3 = Cor3 - (w1/(sigma2H^2)*(t(Zt2cs) - wZ )%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3)%*%Yt2[Index_T]
+    Cor4 = Cor4 - (w2/(sigma2H^2)*(t(Zt2cs) - wZ )%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3)%*%Yt3
+  }
   
   if (nt3 == nt2){
     Cor5 = 0
   } else {
-    Cor5 = ( ( t(Zt2cs) - wZ )%*%(diag(nt2-nt3) - w3*rep(1, nt2-nt3)%*%t(rep(1, nt2-nt3))/(n2-nt3))/sigma2H^2-
-      w3*(t(Zt3) - wZ)%*%rep(1, nt3)%*%t(rep(1, nt2-nt3))/(n2-nt3)*(St1 + St2) )%*%Yt2[-Index_T]
+    Cor5 = ( ( t(Zt2cs) - wZ )%*%(diag(nt2-nt3) - w3*rep(1, nt2-nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3))/sigma2H^2-
+      w3*(t(Zt3) - wZ)%*%rep(1, nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3)*(St1 + St2) )%*%Yt2[-Index_T]
   }
   
   Cor = Cor1 + Cor2 + Cor3 + Cor4 + Cor5
@@ -308,34 +312,42 @@ S2_Variance_a0_Ignore = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H
   } else {
     Zc1cs = Zc1[-Index_C, , drop = F]
     Cov2 = t(Zc1cs)%*%Zc1cs/(sigma1H^2)
-    Cor2 = t(Zc1cs)%*%Yc1[-Index_C]/(sigma1H^2)
-    B0 = Cor2
-    B = solve(Cov, B0)
-    b = -t(B)%*%k
+    #Cor2 = t(Zc1cs)%*%Yc1[-Index_C]/(sigma1H^2)
+    B0 = t(Zc1cs)/(sigma1H^2)
   }
   
   Cov3 = ( t(Zt3) - k )%*%t( (t(Zt3) - k ) )*
     (St1 + St2)
   Cov = Cov1 + Cov2 + Cov3 + Cov4
   
-  
-  
   A0 = Sc1*t(Zc3)
   
-  C0 =  ( t(Zt3) - k )%*%(St1*diag(nt3) - (St1 + St2)*w1*rep(1, nt3)%*%t(rep(1, nt3))/nt3 )
+  if (nc3 != nc1) {
+    B = solve(Cov, B0)
+    b = -t(B)%*%k  
+  }
+  
+  
+  C0 =  ( t(Zt3) - k )%*%(St1*diag(nt3) - (St1 + St2)*w1*rep(1, nt3)%*%t(rep(1, nt3))/nt3 ) 
+  E0 = Sc2*t(Zc3)
+  G0 = ( t(Zt3) - k)%*%(St2*diag(nt3) - (St1 + St2)*w2*rep(1, nt3)%*%t(rep(1, nt3))/nt3 )
   if (nt3 == nt2) {
     D0 = 0  
     D = 0
     d = 0
   } else {
-    D0 =  ( t(Zt2cs) - k )%*%(diag(nt2-nt3) - w3*rep(1, nt2-nt3)%*%t(rep(1, nt2-nt3))/(n2-nt3))/sigma2H^2
-    D0 = D0 - w3*(t(Zt3) - wZ)%*%rep(1, nt3)%*%t(rep(1, nt2-nt3))/(n2-nt3)*(St1 + St2)
+    
+    C0 = C0 - w1/(sigma2H^2)*(t(Zt2cs)-k)%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3
+    
+    D0 =  ( t(Zt2cs) - k )%*%(diag(nt2-nt3) - w3*rep(1, nt2-nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3))/sigma2H^2
+    D0 = D0 - w3*(t(Zt3) - k)%*%rep(1, nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3)*(St1 + St2)
+    
+    G0 = G0 - w2/(sigma2H^2)*(t(Zt2cs)-k)%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3
     D = solve(Cov, D0)
-    d = (w3 - t(D)%*%k)
+    d = (w3/(nt2-nt3) - t(D)%*%k)
   }
   
-  E0 = Sc2*t(Zc3)
-  G0 = ( t(Zt3) - k)%*%(St2*diag(nt3) - (St1 + St2)*w2*rep(1, nt3)%*%t(rep(1, nt3))/nt3 )
+  
   
   A = solve(Cov, A0)
   C = solve(Cov, C0)
@@ -344,9 +356,9 @@ S2_Variance_a0_Ignore = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H
   G = solve(Cov, G0)
   
   a = -t(A)%*%k
-  c = (w1 - t(C)%*%k)
+  c = (w1/nt3 - t(C)%*%k)
   e = -t(E)%*%k
-  f = w2 - t(G)%*%k
+  f = w2/nt3 - t(G)%*%k
   
   Var = (sigma1H^2) * (t(a)%*%a + t(b)%*%b ) + (sigma2H^2)*(t(c)%*%c + t(d)%*%d) +
     (sigma3H^2)*(t(e)%*%e + t(f)%*%f ) + 2*rho1H*sigma1H*sigma3H*(t(a)%*%e) + 

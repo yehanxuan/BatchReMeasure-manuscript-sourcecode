@@ -21,7 +21,7 @@ Estimate_ReMeasure_S2_Pair = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
   sigma2_hat = out$sigma2
   sigma3_hat = out$sigma3
   rho1_hat = out$rho1
-  rho2_hat = out$sigma2
+  rho2_hat = out$rho2
   ztest = a0_hat/sqrt(out$a0Var)
   objVec = out$objVec
   
@@ -87,7 +87,7 @@ Estimate_ReMeasure_S2_Res = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
   sigma2_hat = out$sigma2
   sigma3_hat = out$sigma3
   rho1_hat = out$rho1
-  rho2_hat = out$sigma2
+  rho2_hat = out$rho2
   ztest = a0_hat/sqrt(out$a0Var)
   objVec = out$objVec
   
@@ -150,7 +150,7 @@ Estimate_ReMeasure_S2_Wild = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
   sigma2_hat = out$sigma2
   sigma3_hat = out$sigma3
   rho1_hat = out$rho1
-  rho2_hat = out$sigma2
+  rho2_hat = out$rho2
   ztest = a0_hat/sqrt(out$a0Var)
   objVec = out$objVec
   
@@ -164,8 +164,8 @@ Estimate_ReMeasure_S2_Wild = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     ec3 = (rho1_hat * ec1[Index_C] + sqrt(1 - rho1_hat^2) * ecInd) * sigma3_hat/sigma1_hat
     Yc3_b = a3_hat + ec3 + Zc3%*%beta_hat
     
-    etInd = rnorm(nt3, mean = 0, sd = sigma1_hat) 
-    et3 = (rho2_hat * et2[Index_T] + sqrt(1 - rho2_hat^2) * etInd ) * sigma3_hat/sigma1_hat
+    etInd = rnorm(nt3, mean = 0, sd = sigma2_hat) 
+    et3 = (rho2_hat * et2[Index_T] + sqrt(1 - rho2_hat^2) * etInd ) * sigma3_hat/sigma2_hat
     Yt3_b = a0_hat + a3_hat + et3 + Zt3%*%beta_hat 
     
     out_b = Estimate_ReMeasure_S2(Zc1, Zt2, Zc3, Zt3, Yc1_b, Yt2_b, Yc3_b, Yt3_b,

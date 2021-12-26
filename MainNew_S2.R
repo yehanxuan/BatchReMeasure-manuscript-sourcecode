@@ -9,31 +9,32 @@ source("./Models/IgnoreBatch_S2.R")
 source("./Models/LSmodel_S2.R")
 
 args <- commandArgs(trailingOnly = TRUE)
-n = as.numeric(args[1])
-n1 = as.numeric(args[2])
-n2 = as.numeric(args[3])
-r1 = as.numeric(args[4])
-r2 = as.numeric(args[5])
-r3 = as.numeric(args[6])
-a0 = as.numeric(args[7])
-a1 = as.numeric(args[8])
-a3 = as.numeric(args[9])
-repID = as.numeric(args[10])
+method = args[1]
+n = as.numeric(args[2])
+n1 = as.numeric(args[3])
+n2 = as.numeric(args[4])
+r1 = as.numeric(args[5])
+r2 = as.numeric(args[6])
+r3 = as.numeric(args[7])
+a0 = as.numeric(args[8])
+a1 = as.numeric(args[9])
+a3 = as.numeric(args[10])
+repID = as.numeric(args[11])
 
 
 
 
-method = "Ignore"
-n = 100
-n1 = 50
-n2 = 50
-r1 = 0.5
-r2 = 0.3 
-r3 = 0.4 
-a0 = 0.25
-a1 = 0
-a3 = 0
-repID = 2
+ method = "PairBoot"
+ n = 100
+ n1 = 5
+ n2 = 5
+ r1 = 0.5
+ r2 = 0.3 
+ r3 = 0.4
+ a0 = 0
+ a1 = 0
+ a3 = 0
+ repID = 2
 
 source(paste0("./oneReplicate/oneReplicate-New-S2.R"))
 
@@ -362,7 +363,7 @@ Final = list("a0" = result1, "a0Var"= result2, "a1"=result3, "a3" = result4, "si
              "beta"=result10, "objVec"=result11,
              "Time" = result12, "ztest" = result13, "ztestb" = result14, "p.value" = result15)
 
-#save(Final, file = savePath)
+save(Final, file = savePath)
 
 
 

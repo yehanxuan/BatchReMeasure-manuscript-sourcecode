@@ -16,7 +16,7 @@ Y.r1.a <- a3 + Z.r1.a %*% b + r2 * sqrt(v3) * Et.r1.a/sqrt(v1) +
   rnorm(n/2, sd = sqrt( (1 - r2^2) * v3 ) )
 
 
-Z.r2.a <- Z[(n/2+1) : n, ]
+Z.r2.a <- Z[(n/2+1) : n, , drop = F]
 Et.r2.a <- Et[(n/2+1) : n]
 Y.r2.a <- a0 + a3 + Z.r2.a %*% b + r3 * sqrt(v3) * Et.r2.a/sqrt(v2) + 
   rnorm(n/2, sd = sqrt( (1 - r3^2)*v3 ) )

@@ -43,9 +43,9 @@ S2_Update_rho2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, sigma2H, sig
   rho2H = Re(rho2H)
   
   if (rho2H > 0.999) {
-    rho2H = 0.99
+    rho2H = 0.97
   } else if (rho2H < -0.99) {
-    rho2H = -0.99
+    rho2H = -0.97
   }
   return(rho2H)
 }
@@ -495,7 +495,7 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
   if ( is.null(sigma1.Ini) ) {
     sigma1.Ini = sqrt( mean( (Yc1[Index_C] - mean(Yc1[Index_C]) )^2 ) )
   } 
-  if (sigma1.Ini <= 0.001 ){
+  if (sigma1.Ini <= 0.01 ){
     sigma1.Ini = 0.5
   }
   if ( is.null(sigma2.Ini) ) {
@@ -507,7 +507,7 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
   if ( is.null(sigma3.Ini)) {
     sigma3.Ini = sqrt( mean( (Yc3 - mean(Yc3))^2 ) )
   }
-  if (sigma3.Ini <= 0.001 ){
+  if (sigma3.Ini <= 0.01 ){
     sigma3.Ini = 0.5
   }
   if ( is.null(rho1.Ini) ) {
@@ -519,8 +519,18 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
     rho1.Ini = -0.95
   }
   
+  ### Set another estimate for sigma3 in case problem happens in PairBoot
+  sigma4.Ini = NULL
+  if ( is.null(sigma4.Ini)) {
+    sigma4.Ini = sqrt( mean( (Yt3 - mean(Yt3))^2 ) )
+  }
+  if (sigma4.Ini <= 0.01 ){
+    sigma4.Ini = 0.5
+  }
+  
   if ( is.null(rho2.Ini) ) {
-    rho2.Ini = t( Yt2[Index_T] - mean(Yt2[Index_T]) )%*%(Yt3 - mean(Yt3))/(nt3*sigma2.Ini* (sqrt( mean( (Yt3 - mean(Yt3))^2 ) )) )
+   # rho2.Ini = t( Yt2[Index_T] - mean(Yt2[Index_T]) )%*%(Yt3 - mean(Yt3))/(nt3*sigma2.Ini* (sqrt( mean( (Yt3 - mean(Yt3))^2 ) )) )
+    rho2.Ini = t( Yt2[Index_T] - mean(Yt2[Index_T]) )%*%(Yt3 - mean(Yt3))/(nt3*sigma2.Ini* sigma4.Ini)
   }
   if ( rho2.Ini > 0.99 ) {
     rho2.Ini = 0.95
