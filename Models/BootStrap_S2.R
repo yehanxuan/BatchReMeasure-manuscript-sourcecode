@@ -54,9 +54,9 @@ Estimate_ReMeasure_S2_Pair = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     out_b = Estimate_ReMeasure_S2(Zc1_b, Zt2_b, Zc3_b, Zt3_b, 
                                   Yc1_b, Yt2_b, Yc3_b, Yt3_b, Index_C, Index_T, tol.c)
     ztest_b[j] = (out_b$a0 - a0_hat)/sqrt(out_b$a0Var)
-    if (j%%200 == 0) {
-      print(j)
-    }
+  #  if (j%%200 == 0) {
+  #    print(j)
+  #  }
   }
   Time = proc.time()[1] - start
   return(list("a0" = a0_hat, "a0Var" = a0Var, "a1" = a1_hat, "a3"=a3_hat,
@@ -114,7 +114,7 @@ Estimate_ReMeasure_S2_Res = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     Yt2_b = Yt2 
     Yt2_b[Index_T] = a0_hat + a1_hat+ Zt2[Index_T, ,drop=F]%*%beta_hat + et2_hat_re[ind_nt3]
     Yt2_b[-Index_T] = a0_hat + a1_hat + Zt2[-Index_T, ,drop=F]%*%beta_hat + et2_hat_unre[ind_nt2_un]
-    Yt3_b = a0_hat + a1_hat + Zt3%*%beta_hat + et3_hat[ind_nt3]
+    Yt3_b = a0_hat + a3_hat + Zt3%*%beta_hat + et3_hat[ind_nt3]
     
     out_b = Estimate_ReMeasure_S2(Zc1, Zt2, Zc3, Zt3, Yc1_b, Yt2_b, Yc3_b, Yt3_b,
                                   Index_C, Index_T, tol.c)
@@ -171,9 +171,9 @@ Estimate_ReMeasure_S2_Wild = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     out_b = Estimate_ReMeasure_S2(Zc1, Zt2, Zc3, Zt3, Yc1_b, Yt2_b, Yc3_b, Yt3_b,
                                   Index_C, Index_T, tol.c)
     ztest_b[j] = (out_b$a0-a0_hat)/sqrt(out_b$a0Var)
-    if ( j%%200 == 0) {
-      print(j)
-    }
+   # if ( j%%200 == 0) {
+    #  print(j)
+    # }
   }
   
   Time = proc.time()[1] - start
