@@ -162,18 +162,18 @@ S2_Ignore_Update_beta = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
   nc3 = nrow(Zc3)
   nt3 = nrow(Zt3)
   
-  w1 = nt3*(1/(sigma2H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  w2 = nt3*(1/(sigma3H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  w3 = (nt2 - nt3)/(sigma2H^2)
+  w1 = as.numeric( nt3*(1/(sigma2H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  w2 = as.numeric( nt3*(1/(sigma3H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  w3 = as.numeric( (nt2 - nt3)/(sigma2H^2) )
   w = w1 + w2 + w3 
   w1 = w1/w 
   w2 = w2/w
   w3 = w3/w
   
-  Sc1 = (1/sigma1H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2)
-  Sc2 = (1/sigma3H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2)
-  St1 = (1/sigma2H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  St2 = (1/sigma3H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
+  Sc1 = as.numeric( (1/sigma1H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2) )
+  Sc2 = as.numeric( (1/sigma3H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2) )
+  St1 = as.numeric( (1/sigma2H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  St2 = as.numeric( (1/sigma3H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
   
   wZ = (w1 + w2)*colMeans(Zt3)
   if (nt3 == nt2) {
@@ -278,19 +278,19 @@ S2_Variance_a0_Ignore = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H
   nc3 = nrow(Zc3)
   nt3 = nrow(Zt3)
   
-  w1 = nt3*(1/(sigma2H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  w2 = nt3*(1/(sigma3H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  w3 = (nt2 - nt3)/(sigma2H^2)
+  w1 = as.numeric( nt3*(1/(sigma2H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  w2 = as.numeric( nt3*(1/(sigma3H^2) - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  w3 = as.numeric( (nt2 - nt3)/(sigma2H^2) )
   w = w1 + w2 + w3 
   w1 = w1/w 
   w2 = w2/w
   w3 = w3/w
   
   
-  Sc1 = (1/sigma1H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2)
-  Sc2 = (1/sigma3H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2)
-  St1 = (1/sigma2H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
-  St2 = (1/sigma3H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2)
+  Sc1 = as.numeric( (1/sigma1H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2) )
+  Sc2 = as.numeric( (1/sigma3H^2 - rho1H/(sigma1H*sigma3H))/(1 - rho1H^2) )
+  St1 = as.numeric( (1/sigma2H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
+  St2 = as.numeric( (1/sigma3H^2 - rho2H/(sigma2H*sigma3H))/(1 - rho2H^2) )
   
   k = (w1 + w2)*colMeans(Zt3)
   if (nt3 == nt2) {
@@ -338,7 +338,6 @@ S2_Variance_a0_Ignore = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H
   } else {
     
     C0 = C0 - w1/(sigma2H^2)*(t(Zt2cs)-k)%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3
-    
     D0 =  ( t(Zt2cs) - k )%*%(diag(nt2-nt3) - w3*rep(1, nt2-nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3))/sigma2H^2
     D0 = D0 - w3*(t(Zt3) - k)%*%rep(1, nt3)%*%t(rep(1, nt2-nt3))/(nt2-nt3)*(St1 + St2)
     

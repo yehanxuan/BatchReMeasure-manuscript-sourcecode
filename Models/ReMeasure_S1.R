@@ -18,10 +18,10 @@ Update_rho = function(Zc1, Zc2, Yc1, Yc2, a0H, a1H, betaH, sigma1H, sigma2H, Ind
    
    rhoH = cubic(c(c3, c2, c1, c0))[1]
    rhoH = Re(rhoH)
-   if (rhoH > 0.999) {
-     rhoH = 0.99
-   } else if (rhoH < -0.999) {
-     rhoH = -0.99
+   if (rhoH > 0.99) {
+     rhoH = 0.97
+   } else if (rhoH < -0.99) {
+     rhoH = -0.97
    }
    # or we can try polyroot J, T algorithm
    #polyroot(c(c0, c1, c2, c3))
@@ -82,22 +82,53 @@ Update_sigma2 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, betaH, rhoH, si
 }
 
 Update_beta = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, rhoH, sigma1H, sigma2H, Index) {
-  Cor1 = t(Zc1)%*%Yc1/(sigma1H^2)
-  Cor2 = t(Zt2)%*%( Yt2 - mean(Yt2) )/(sigma2H^2)
-  ratio = sigma2H/sigma1H
-  Ztilde = Zc2 - rhoH*ratio*Zc1[Index, , drop = F]
-  Ytilde = Yc2 - rhoH*ratio*Yc1[Index]
-  
-  Cor3 = 1/( (sigma2H^2)*(1 - rhoH^2) ) * t(Ztilde)%*%(Ytilde - mean(Ytilde))
-  t = Cor1 + Cor2 + Cor3
-  
-  Cov1 = t(Zc1)%*%Zc1/(sigma1H^2) 
-  Cov2 = t(Zt2)%*%t( t(Zt2) - colMeans(Zt2) )/(sigma2H^2)
-  Cov3 = t(Ztilde)%*%t( t(Ztilde) -colMeans(Ztilde) )/( (sigma2H^2)*(1-rhoH^2) ) # Very small
+  nc1 = nrow(Zc1)
+  nc2 = nrow(Zc2)
+  R = as.numeric(rhoH*sigma2H/sigma1H)
+
+  Cov1 = t(Zc2)%*%Zc2/(sigma1H^2*(1-rhoH^2))
+  Cor1 = t(Zc2)%*%Yc1[Index]/(sigma1H^2*(1-rhoH^2))
+  if (nc2 != nc1) {
+    Zc1cs = Zc1[-Index, , drop = F]
+    Cov1 = Cov1 + t(Zc1cs)%*%Zc1cs/(sigma1H^2)
+    Cor1 = Cor1 + t(Zc1cs)%*%Yc1[-Index]/(sigma1H^2)
+  }
+
+  Ztilde = t(t(Zc2) - (1-R)*colMeans(Zc2))
+  Cov2 = (-2*rhoH*t(Zc2)%*%Ztilde/(sigma1H*sigma2H) + t(Ztilde)%*%Ztilde/(sigma2H^2))/(1-rhoH^2)
+  Zt2_ct = t(Zt2) - colMeans(Zt2)
+  Cov3 = Zt2_ct%*%t(Zt2_ct)/(sigma2H^2)
   S = Cov1 + Cov2 + Cov3
+
+
+  #Cor1 = t(Zc1)%*%Yc1 + t(Zc2)%*%Yc1[Index]*rhoH^2/(sigma1H^2*(1-rhoH^2))
+  Ytilde = Yc2 - mean(Yc2) + R*mean(Yc1[Index])
+  Cor2 = (-t(Zc2)%*%Ytilde - t(Ztilde)%*%Yc1[Index])*rhoH/(sigma1H*sigma2H*(1-rhoH^2)) +
+    t(Ztilde)%*%Ytilde/(sigma2H^2*(1-rhoH^2))
+  Cor3 = Zt2_ct%*%(Yt2 - mean(Yt2))/(sigma2H^2)
+  t = Cor1 + Cor2 + Cor3
+
   betaH = solve(S, t)
   return(betaH)
 }
+
+# Update_beta = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, rhoH, sigma1H, sigma2H, Index) {
+#   Cor1 = t(Zc1)%*%Yc1/(sigma1H^2)
+#   Cor2 = t(Zt2)%*%( Yt2 - mean(Yt2) )/(sigma2H^2)
+#   ratio = sigma2H/sigma1H
+#   Ztilde = Zc2 - rhoH*ratio*Zc1[Index, , drop = F]
+#   Ytilde = Yc2 - rhoH*ratio*Yc1[Index]
+# 
+#   Cor3 = 1/( (sigma2H^2)*(1 - rhoH^2) ) * t(Ztilde)%*%(Ytilde - mean(Ytilde))
+#   t = Cor1 + Cor2 + Cor3
+# 
+#   Cov1 = t(Zc1)%*%Zc1/(sigma1H^2)
+#   Cov2 = t(Zt2)%*%t( t(Zt2) - colMeans(Zt2) )/(sigma2H^2)
+#   Cov3 = t(Ztilde)%*%t( t(Ztilde) -colMeans(Ztilde) )/( (sigma2H^2)*(1-rhoH^2) ) # Very small
+#   S = Cov1 + Cov2 + Cov3
+#   betaH = solve(S, t)
+#   return(betaH)
+# }
 
 Update_a = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, a0H, a1H, betaH, rhoH, sigma1H, sigma2H, Index) {
   ratio = sigma2H/sigma1H
@@ -143,56 +174,106 @@ Variance_a0 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, sigma1H, sigma2H, rhoH, Ind
   nc1 = nrow(Zc1)
   nt2 = nrow(Zt2)
   nc2 = nrow(Zc2)
-  Ztilde = (1 - rhoH*(sigma2H/sigma1H) )*Zc2
-  Cov1 = t(Zc1)%*%Zc1/(sigma1H^2) 
-  Cov2 = t(Zt2)%*%t( t(Zt2) - colMeans(Zt2) )/(sigma2H^2)
-  Cov3 = t(Ztilde)%*%t( t(Ztilde) -colMeans(Ztilde) )/( (sigma2H^2)*(1-rhoH^2) ) # Very small
+  R = as.numeric(rhoH*sigma2H/sigma1H)
+
+  Cov1 = t(Zc1)%*%Zc1/(sigma1H^2) + t(Zc2)%*%Zc2*rhoH^2/(sigma1H^2*(1-rhoH^2))
+  Ztilde = t(t(Zc2) - (1-R)*colMeans(Zc2))
+  Cov2 = (-2*rhoH*t(Zc2)%*%Ztilde/(sigma1H*sigma2H) + t(Ztilde)%*%Ztilde/(sigma2H^2))/(1-rhoH^2)
+  Zt2_ct = t(Zt2) - colMeans(Zt2)
+  Cov3 = Zt2_ct%*%t(Zt2_ct)/(sigma2H^2)
   S = Cov1 + Cov2 + Cov3
-  
+
   # Identity matrix, do not make mistake
- A0 = t(Zc2)%*%( diag(nc2)/((sigma1H^2)*(1 - rhoH^2)) - 
-   rhoH/(sigma1H*sigma2H*(1 - rhoH^2)) * (diag(nc2) - rep(1, nc2)%*%t(rep(1, nc2))/nc2 ) -
-   (rhoH^2)/( (sigma1H^2)*( 1 - rhoH^2))*(rep(1, nc2)%*%t(rep(1, nc2))/nc2 ) )
-  
-  
-  B0 = (1/(sigma2H^2) )*t(Zt2)%*%(diag(nt2) - rep(1, nt2)%*%t(rep(1, nt2))/nt2)
-  
-  C0 = ( 1/((sigma2H^2)*(1 - rhoH^2)) - rhoH/(sigma1H*sigma2H*(1 - rhoH^2)) )*
-    t(Zc2)%*%(diag(nc2) - rep(1, nc2)%*%t(rep(1, nc2))/nc2 )
-  
-  Zt2Mean = colMeans(Zt2)
-  ZtildeMean = colMeans(Ztilde)
-  
-  if (length(Index) == nc1){
+  A0 = (t(Zc2)/sigma1H^2 - t(Ztilde)*rhoH/(sigma1H*sigma2H))/(1 - rhoH^2)
+  #colMeans(Zc2)%*%t(rep(1, nc2))*rhoH/(sigma1H*sigma2H)
+  #colMeans(Ztilde)%*%t(rep(1, nc2))/sigma2H^2
+  B0 = (t(Zt2) - colMeans(Zt2)%*%t(rep(1, nt2)))/(sigma2H^2)
+
+  C0 = - (t(Zc2) - colMeans(Zc2)%*%t(rep(1, nc2)) )*rhoH/(sigma1H*sigma2H) +
+    (t(Ztilde) - colMeans(Ztilde)%*%t(rep(1, nc2)))/(sigma2H^2)
+  C0 = C0/(1-rhoH^2)
+
+  k = colMeans(Zt2) - (1 - R)*colMeans(Zc2)
+
+  if (nc2 == nc1){
     D0 = 0
-    d = 0 
+    d = 0
   } else {
     D0 = t(Zc1[-Index, , drop = F])/(sigma1H^2)
     D = solve(S, D0)
-    d = t(D)%*%(ZtildeMean - Zt2Mean)
+    d = t(D)%*%k
   }
-  
+
   A = solve(S, A0)
   B = solve(S, B0)
   C = solve(S, C0)
-  
- # (ZtildeMean - Zt2Mean)%*%A + (rhoH*sigma2H/sigma1H)*t(rep(1, nc2)/nc2)
-              
-  a = t(A)%*%(ZtildeMean - Zt2Mean) + (rhoH*sigma2H/sigma1H)*rep(1, nc2)/nc2
-  b = t(B)%*%(ZtildeMean - Zt2Mean) + rep(1, nt2)/nt2
- # c = t(C)%*%(ZtildeMean - Zt2Mean) + rep(1, nc2)/nc2 ## modified here 10/12/2021
-  c = t(C)%*%(ZtildeMean - Zt2Mean) - rep(1, nc2)/nc2
-  
-  Var = (sigma1H^2)*( t(a)%*%a + t(d)%*%d ) + 
+
+  a = t(A)%*%k + R*rep(1, nc2)/nc2
+  b = t(B)%*%k + rep(1, nt2)/nt2
+  # c = t(C)%*%(ZtildeMean - Zt2Mean) + rep(1, nc2)/nc2 ## modified here 10/12/2021
+  c = t(C)%*%k - rep(1, nc2)/nc2
+
+  Var = (sigma1H^2)*( t(a)%*%a + t(d)%*%d ) +
     (sigma2H^2)*(t(b)%*%b + t(c)%*%c) + 2*rhoH*sigma1H*sigma2H*t(a)%*%c
-  
-  ### Hindsight variance 
-  #Var = (sigma1^2)*( t(a)%*%a + t(d)%*%d ) + 
+  ### Hindsight variance
+  # Var = (sigma1^2)*( t(a)%*%a + t(d)%*%d ) +
   #  (sigma2^2)*(t(b)%*%b + t(c)%*%c) + 2*rho*sigma1*sigma2*t(a)%*%c
-  
   Var = as.numeric(Var)
   return(Var)
 }
+
+# Variance_a0 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, sigma1H, sigma2H, rhoH, Index) {
+#   nc1 = nrow(Zc1)
+#   nt2 = nrow(Zt2)
+#   nc2 = nrow(Zc2)
+#   Ztilde = (1 - rhoH*(sigma2H/sigma1H) )*Zc2
+#   Cov1 = t(Zc1)%*%Zc1/(sigma1H^2)
+#   Cov2 = t(Zt2)%*%t( t(Zt2) - colMeans(Zt2) )/(sigma2H^2)
+#   Cov3 = t(Ztilde)%*%t( t(Ztilde) -colMeans(Ztilde) )/( (sigma2H^2)*(1-rhoH^2) ) # Very small
+#   S = Cov1 + Cov2 + Cov3
+# 
+#   # Identity matrix, do not make mistake
+#  A0 = t(Zc2)%*%( diag(nc2)/((sigma1H^2)*(1 - rhoH^2)) -
+#    rhoH/(sigma1H*sigma2H*(1 - rhoH^2)) * (diag(nc2) - rep(1, nc2)%*%t(rep(1, nc2))/nc2 ) -
+#    (rhoH^2)/( (sigma1H^2)*( 1 - rhoH^2))*(rep(1, nc2)%*%t(rep(1, nc2))/nc2 ) )
+# 
+# 
+#   B0 = (1/(sigma2H^2) )*t(Zt2)%*%(diag(nt2) - rep(1, nt2)%*%t(rep(1, nt2))/nt2)
+# 
+#   C0 = ( 1/((sigma2H^2)*(1 - rhoH^2)) - rhoH/(sigma1H*sigma2H*(1 - rhoH^2)) )*
+#     t(Zc2)%*%(diag(nc2) - rep(1, nc2)%*%t(rep(1, nc2))/nc2 )
+# 
+#   Zt2Mean = colMeans(Zt2)
+#   ZtildeMean = colMeans(Ztilde)
+# 
+#   if (length(Index) == nc1){
+#     D0 = 0
+#     d = 0
+#   } else {
+#     D0 = t(Zc1[-Index, , drop = F])/(sigma1H^2)
+#     D = solve(S, D0)
+#     d = t(D)%*%(ZtildeMean - Zt2Mean)
+#   }
+# 
+#   A = solve(S, A0)
+#   B = solve(S, B0)
+#   C = solve(S, C0)
+# 
+#  # (ZtildeMean - Zt2Mean)%*%A + (rhoH*sigma2H/sigma1H)*t(rep(1, nc2)/nc2)
+# 
+#   a = t(A)%*%(ZtildeMean - Zt2Mean) + (rhoH*sigma2H/sigma1H)*rep(1, nc2)/nc2
+#   b = t(B)%*%(ZtildeMean - Zt2Mean) + rep(1, nt2)/nt2
+#  # c = t(C)%*%(ZtildeMean - Zt2Mean) + rep(1, nc2)/nc2 ## modified here 10/12/2021
+#   c = t(C)%*%(ZtildeMean - Zt2Mean) - rep(1, nc2)/nc2
+# 
+#   Var = (sigma1H^2)*( t(a)%*%a + t(d)%*%d ) +
+#     (sigma2H^2)*(t(b)%*%b + t(c)%*%c) + 2*rhoH*sigma1H*sigma2H*t(a)%*%c
+#   ### Hindsight variance
+#   #Var = (sigma1^2)*( t(a)%*%a + t(d)%*%d ) +
+#   #  (sigma2^2)*(t(b)%*%b + t(c)%*%c) + 2*rho*sigma1*sigma2*t(a)%*%c
+#   Var = as.numeric(Var)
+#   return(Var)
+# }
 
 
 Estimate_ReMeasure_S1 = function(Zc1, Zt2, Zc2, Yc1, Yt2, Yc2, Index, tol.c = 1e-7, a0.Ini = NULL, a1.Ini=NULL, 
