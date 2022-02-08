@@ -28,4 +28,7 @@ ind.r <- 1:n1
 Y.r = Y.r.a[ind.r]
 
 
+alpha = 0.05
+
+
 

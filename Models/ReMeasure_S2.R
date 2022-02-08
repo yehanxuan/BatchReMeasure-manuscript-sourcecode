@@ -17,10 +17,10 @@ S2_Update_rho1 = function(Zc1, Zc3, Yc1, Yc3, a3H, betaH,
   
   rho1H = cubic( c(c3, c2, c1, c0) )[1]
   rho1H = Re(rho1H) 
-  if (rho1H > 0.999) {
-    rho1H = 0.99
-  } else if (rho1H < -0.999 ) {
-    rho1H = -0.99
+  if (rho1H > 0.99) {
+    rho1H = 0.95
+  } else if (rho1H < -0.99 ) {
+    rho1H = -0.95
   }
   return(rho1H)
 }
@@ -42,10 +42,10 @@ S2_Update_rho2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, sigma2H, sig
   rho2H = cubic(c(c3, c2, c1, c0))[1]
   rho2H = Re(rho2H)
   
-  if (rho2H > 0.999) {
-    rho2H = 0.97
+  if (rho2H > 0.99) {
+    rho2H = 0.95
   } else if (rho2H < -0.99) {
-    rho2H = -0.97
+    rho2H = -0.95
   }
   return(rho2H)
 }
@@ -65,9 +65,9 @@ S2_Update_sigma1 = function(Zc1, Zc3, Yc1, Yc3, a3H, betaH, rho1H, sigma3H, Inde
  
   W13p = sum( (Yc1[Index_C] - mean1[Index_C])*(Yc3 - mean3) )
   if (rho1H > 0.99) {
-    rho1H = 0.97
+    rho1H = 0.95
   } else if (rho1H < -0.99) {
-    rho1H = -0.97
+    rho1H = -0.95
   }
   c0 = ( -W1p - (1 - rho1H^2)*W1s )/nc1 
   #c0 = -W1p/nc1 - (1 - rho1H^2)*W1s/nc1
@@ -92,9 +92,9 @@ S2_Update_sigma2 = function(Zt2, Zt3, Yt2, Yt3, a0H, a1H, a3H, betaH, rho2H, sig
   }
   W24p = sum( (Yt2[Index_T] - mean2[Index_T])*(Yt3 - mean4) )
   if (rho2H > 0.99) {
-    rho2H = 0.97
+    rho2H = 0.95
   } else if (rho2H < -0.99) {
-    rho2H = -0.97
+    rho2H = -0.95
   }
   c0 = -W2p/nt2 - (1 - rho2H^2)*W2s/nt2
   c1 = rho2H*W24p/(nt2*sigma3H)
@@ -120,7 +120,16 @@ S2_Update_sigma3 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, a0H, a1H, a3
   W4p = sum( (Yt3 - mean4)^2)
   W13p = sum( (Yc1[Index_C] - mean1[Index_C])*(Yc3 - mean3) )
   W24p = sum( (Yt2[Index_T] - mean2[Index_T])*(Yt3 - mean4) ) 
-  
+  if (rho1H > 0.99) {
+    rho1H = 0.95
+  } else if (rho1H < -0.99) {
+    rho1H = -0.95
+  }
+  if (rho2H > 0.99) {
+    rho2H = 0.95
+  } else if (rho2H < -0.99) {
+    rho2H = -0.95
+  }
   c0 = -(1 - rho2H^2)*W3p/N3 - (1 - rho1H^2)*W4p/N3 
   c1 = (1 - rho2H^2)*rho1H*W13p/sigma1H  + (1 - rho1H^2)*rho2H*W24p/sigma2H
   c1 = c1/N3
@@ -184,6 +193,10 @@ S2_Update_a3 = function(Zc1, Yc1, Zc3, Yc3, betaH, rho1H, sigma1H, sigma3H, Inde
 
 S2_Update_beta = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, rho1H, rho2H,
                           sigma1H, sigma2H, sigma3H, Index_C, Index_T) {
+  if (sigma3H < 0.01) {
+    sigma3H = 0.1 ## Protect if sigma3H is too small 
+  }
+  
   nc1 = nrow(Zc1)
   nt2 = nrow(Zt2)
   nc3 = nrow(Zc3)
@@ -332,6 +345,9 @@ ObjectiveValue_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, a0H,
   nc1 = nrow(Zc1)
   nt2 = nrow(Zt2)
   mu1 = Zc1 %*% betaH
+  a0H = as.numeric(a0H)
+  a1H = as.numeric(a1H)
+  a3H = as.numeric(a3H)
   mu2 = a0H + a1H + Zt2%*%betaH
   mu3 = a3H + Zc3%*%betaH
   mu4 = a0H + a3H + Zt3%*%betaH
@@ -360,7 +376,7 @@ ObjectiveValue_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, betaH, a0H,
     part4 = 0
   } else {
     part4 = (nt2 - nt3)*log(sigma2H) + 
-      t(Yt2Scale[-Index_T]) %*% Yt2Scale[-Index_T]
+      t(Yt2Scale[-Index_T]) %*% Yt2Scale[-Index_T]/2
   }
   
   
@@ -625,19 +641,19 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
     sigma1.Ini = sqrt( mean( (Yc1[Index_C] - mean(Yc1[Index_C]) )^2 ) )
   } 
   if (sigma1.Ini <= 0.01 ){
-    sigma1.Ini = 0.5
+    sigma1.Ini = 0.2
   }
   if ( is.null(sigma2.Ini) ) {
     sigma2.Ini = sqrt( mean( (Yt2[Index_T] - mean(Yt2[Index_T]))^2 ) )
   }
-  if (sigma2.Ini <= 0.001) {
-    sigma2.Ini = 0.5
+  if (sigma2.Ini <= 0.01) {
+    sigma2.Ini = 0.2
   }
   if ( is.null(sigma3.Ini)) {
     sigma3.Ini = sqrt( mean( (Yc3 - mean(Yc3))^2 ) )
   }
   if (sigma3.Ini <= 0.01 ){
-    sigma3.Ini = 0.5
+    sigma3.Ini = 0.2
   }
   if ( is.null(rho1.Ini) ) {
     rho1.Ini = t(Yc1[Index_C] - mean(Yc1[Index_C]))%*%(Yc3 - mean(Yc3))/(nc3*sigma1.Ini*sigma3.Ini)
@@ -654,7 +670,7 @@ Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C
     sigma4.Ini = sqrt( mean( (Yt3 - mean(Yt3))^2 ) )
   }
   if (sigma4.Ini <= 0.01 ){
-    sigma4.Ini = 0.5
+    sigma4.Ini = 0.2
   }
   
   if ( is.null(rho2.Ini) ) {

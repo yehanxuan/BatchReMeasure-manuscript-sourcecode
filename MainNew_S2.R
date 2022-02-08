@@ -30,10 +30,10 @@ repID = as.numeric(args[11])
  n2 = 5
  r1 = 0.5
  r2 = 0.3 
- r3 = 0.4
- a0 = 0
- a1 = 0
- a3 = 0
+ r3 = 0.6
+ a0 = 0.25
+ a1 = 0.25
+ a3 = 0.5
  repID = 2
 
 source(paste0("./oneReplicate/oneReplicate-New-S2.R"))
@@ -42,8 +42,8 @@ savePath = paste0("./S2Data/S2-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-
                   "-r1-", r1,"-r2-", r2, "-r3-", r3, "-a0-", a0, "-a1-", a1, "-a3-", a3, ".RData")
 
 
-nCPUS = 5
-maxIter = 5
+nCPUS = 20
+maxIter = 40
 
 result1 = list()
 result2 = list()
