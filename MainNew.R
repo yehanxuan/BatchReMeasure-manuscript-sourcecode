@@ -1,13 +1,16 @@
 rm(list = ls())
 library(snowfall)
 library(RConics)
+library(RcppArmadillo)
+library(Rcpp)
 source("./DataSet/Data.R")
-source("./Models/ReMeasure_S1.R")
 source("./Models/Batch2Only.R")
 source("./Models/IgnoreBatch.R")
 source("./Models/Bootstrap.R")
-source("./Models/ReMeasureWrap_S1.R")
 source("./Models/LSmodel.R")
+source("./Models/CorFunc.R")
+#Rcpp::sourceCpp("src/RcppReMeasure_S1.cpp")
+source("./Models/RcppReMeasure_S1.R")
   
 args <- commandArgs(trailingOnly = TRUE)
 method = args[1]
@@ -19,23 +22,30 @@ a0 = as.numeric(args[6])
 a1 = as.numeric(args[7])
 repID = as.numeric(args[8])
 
-# method = "LS"
-# n = 100
-# n1 = 50
-# r1 = 0.5
-# r2 = 0.3
-# a0 = 0
-# a1 = 0.5
-# repID = 2
+ method = "ReMeasure"
+ n = 100
+ n1 = 40
+ r1 = 1
+ r2 = 0.6
+ a0 = 0.25
+ a1 = 0.5
+ repID = 2
 
 source(paste0("./oneReplicate/oneReplicate-New-S1.R"))
+ 
+if (method != "RcppReMeasure") {
+  savePath = paste0("./S1Data/S1-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-nt2-", n/2,"-nc2-", n1 ,"-r1-",
+                    r1,"-r2-", r2,"-a0-", a0, "-a1-", a1, ".RData")
+} else {
+  savePath = paste0("./S1Data_Rcpp/S1-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-nt2-", n/2,"-nc2-", n1 ,"-r1-",
+                    r1,"-r2-", r2,"-a0-", a0, "-a1-", a1, ".RData")
+}
+ 
 
-savePath = paste0("./S1Data/S1-method-", method,"-repID-",repID,"-nc1-", n/2 ,"-nt2-", n/2,"-nc2-", n1 ,"-r1-",
-                  r1,"-r2-", r2,"-a0-", a0, "-a1-", a1, ".RData")
 
 
-nCPUS = 5
-maxIter = 5
+nCPUS = 10
+maxIter = 10
 
 result1 = list()
 result2 = list()
@@ -49,7 +59,10 @@ result9 = list()
 result10 = list()
 result11 = list()
 result12 = list()
-if (method == "Ignore") {
+a0Var_ora = list()
+Power_th = list()
+
+if ((method == "Ignore") | (method == "Gen") ) {
   for (i in 1:ceiling(maxIter/nCPUS)){
     print(i)
     sfInit(parallel = TRUE, cpus = nCPUS)
@@ -57,12 +70,17 @@ if (method == "Ignore") {
     sfLibrary(RConics)
     sfLibrary(MASS)
     sfLibrary(mvtnorm)
+    sfLibrary(lmvar)
     sBegin = (i-1)*nCPUS +1
     sEnd = min(i*nCPUS, maxIter)
     seedSeq = seq(sBegin, sEnd, by = 1)
-    tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_Ignore)
+    if (method == "Ignore") {
+      tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_Ignore)
+    } else if (method == "Gen") {
+      tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_Gen)
+    }
     sfStop()
-    tmp = Filter(function(x) length(x) >= 3, tmp)
+   # tmp = Filter(function(x) length(x) >= 3, tmp)
     tmp1 = lapply(tmp, function(x) x[[1]])
     tmp2 = lapply(tmp, function(x) x[[2]])
     tmp3 = lapply(tmp, function(x) x[[3]])
@@ -115,7 +133,7 @@ if (method == "Ignore") {
     result8 = c(result8, tmp8)
     result9 = c(result9, tmp9)
   }
-} else if (method == "ReMeasure") {
+} else if ( (method == "ReMeasure") | (method == "RcppReMeasure")) {
   for (i in 1:ceiling(maxIter/nCPUS)){
     print(i)
     sfInit(parallel = TRUE, cpus = nCPUS)
@@ -123,10 +141,17 @@ if (method == "Ignore") {
     sfLibrary(RConics)
     sfLibrary(MASS)
     sfLibrary(mvtnorm)
+    sfLibrary(RcppArmadillo)
+    sfLibrary(Rcpp)
+    sfClusterEval(sourceCpp("src/RcppReMeasure_S1.cpp"))
     sBegin = (i-1)*nCPUS +1
     sEnd = min(i*nCPUS, maxIter)
     seedSeq = seq(sBegin, sEnd, by = 1)
-    tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_ReMeasure)
+    if (method == "ReMeasure") {
+      tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_ReMeasure)
+    } else if (method == "RcppReMeasure") {
+      tmp = sfClusterApplyLB(seedSeq, oneReplicateWrap_ReMeasure_Rcpp)
+    }
     sfStop()
     tmp = Filter(function(x) length(x) >= 3, tmp)
     tmp1 = lapply(tmp, function(x) x[[1]])
@@ -138,6 +163,8 @@ if (method == "Ignore") {
     tmp7 = lapply(tmp, function(x) x[[7]])
     tmp8 = lapply(tmp, function(x) x[[8]])
     tmp9 = lapply(tmp, function(x) x[[9]])
+    tmp10 = lapply(tmp, function(x) x[[10]])
+    tmp11 = lapply(tmp, function(x) x[[11]])
     result1 = c(result1, tmp1)
     result2 = c(result2, tmp2)
     result3 = c(result3, tmp3)
@@ -147,6 +174,8 @@ if (method == "Ignore") {
     result7 = c(result7, tmp7)
     result8 = c(result8, tmp8)
     result9 = c(result9, tmp9)
+    a0Var_ora = c(a0Var_ora, tmp10)
+    Power_th = c(Power_th, tmp11)
   }
 } else if (method == "ResBoot") {
   for (i in 1:ceiling(maxIter/nCPUS)){
@@ -259,7 +288,7 @@ if (method == "Ignore") {
     result10 = c(result10, tmp10)
     result11 = c(result11, tmp11)
   }
-} else if (method == "LS") {
+} else if ( (method == "LS") ) {
   for (i in 1:ceiling(maxIter/nCPUS)){
     print(i)
     sfInit(parallel = TRUE, cpus = nCPUS)
@@ -299,8 +328,9 @@ if (method == "Ignore") {
 
 Final = list("a0" = result1, "a0Var"= result2, "a1"=result3, "sigma1"=result4,
              "sigma2" = result5, "rho" = result6, "beta"=result7, "objVec"=result8,
-             "Time" = result9, "ztest" = result10, "ztestb" = result11, "p.value" = result12)
+             "Time" = result9, "ztest" = result10, "ztestb" = result11, "p.value" = result12, 
+             "a0Var_ora" = a0Var_ora, "Power" = Power_th)
 
-save(Final, file = savePath)
+#save(Final, file = savePath)
 
 
