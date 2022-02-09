@@ -41,8 +41,8 @@ Ignore_Objective_S2 = function(Zc1, Zt2, Yc1, Yt2, a0H, betaH, sigma1H, sigma2H)
   Yc1Scale = (Yc1 - mu1)/sigma1H
   Yt2Scale = (Yt2 - mu2)/sigma2H
   
-  obj = nc1*log(sigma1H) + t(Yc1Scale[Index])%*%Yc1Scale[Index]/2 +
-    nt2*log(sigma2H) + t(Yt2Scale)%*%Yt2Scale/2
+  obj = as.numeric( nc1*log(sigma1H) + t(Yc1Scale)%*%Yc1Scale/2 +
+    nt2*log(sigma2H) + t(Yt2Scale)%*%Yt2Scale/2)
   return(obj)
 }
 
@@ -97,7 +97,7 @@ Estimate_Ignore_S2 = function(Zc1, Zt2, Yc1, Yt2, tol.c = 1e-7,
     i = i + 1
     sigma1H = S2_Ignore_Update_sigma1(Zc1, Yc1, betaH)
     sigma2H = S2_Ignore_Update_sigma2(Zt2, Yt2, betaH)
-    betaH = S2_Ignore_Update_beta(Zc1, Zt2, Yc1, Yt2, sigma1H, simga2H)
+    betaH = S2_Ignore_Update_beta(Zc1, Zt2, Yc1, Yt2, sigma1H, sigma2H)
     a0H = S2_Ignore_Update_a0(Zt2, Yt2, betaH)
     obj_new = Ignore_Objective_S2(Zc1, Zt2, Yc1, Yt2, a0H, betaH, sigma1H, sigma2H)
     gap = abs(obj_old - obj_new)
@@ -120,14 +120,20 @@ oneReplicate_Ignore_S2 = function(seedJ) {
   a0H = Estimate$a0
   a0Var = Estimate$a0Var
   a1H = NULL
+  a3H = NULL
   betaH = Estimate$beta
-  rhoH = NULL
+  rho1H = NULL
+  rho2H = NULL
   sigma1H = Estimate$sigma1
   sigma2H = Estimate$sigma2
+  sigma3H = Estimate$sigma3
   objVec = Estimate$objVec
   Time = Estimate$Time
-  return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "sigma1" = sigma1H,
-              "sigma2" = sigma2H, "rho" = rhoH, "beta"= betaH, "objVec" = objVec, "Time" = Time))
+  pv <- Estimate$p.value
+  return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "a3" = a3H,
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H,
+              "rho1" = rho1H, "rho2" = rho2H,
+              "beta"= betaH, "objVec" = objVec, "Time" = Time, "p.value" = pv))
 }
 
 
@@ -145,7 +151,7 @@ batch.Ignore.S2 = function(Y, X, Z) {
   Yt2 <- Y[ind1]
   Zc1 <- Z[ind0, , drop = F]
   Zt2 <- Z[ind1, , drop = F]
-  Estimate = Estimate_Ignore_S1(Zc1, Zt2, Yc1, Yt2)
+  Estimate = Estimate_Ignore_S2(Zc1, Zt2, Yc1, Yt2)
   a0H = Estimate$a0
   a0Var = Estimate$a0Var
   betaH = Estimate$beta

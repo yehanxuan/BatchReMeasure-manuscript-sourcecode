@@ -145,3 +145,34 @@ Rcpp.batch.ReMeasure.S2 = function(Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2) {
               "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H, "objVec" = objVec, "Time" = Time))
 }
 
+oneReplicate_ReMeasure_Rcpp_S2 = function(seedJ) {
+  set.seed(seedJ + repID * 300)
+  source("./oneReplicate/oneReplicate-New-S2.R")
+  Estimate =  Rcpp.batch.ReMeasure.S2(Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2)
+  a0H = Estimate$a0
+  a0Var = Estimate$a0Var
+  a1H = Estimate$a1
+  a3H = Estimate$a3
+  betaH = Estimate$beta
+  rho1H = Estimate$rho1
+  rho2H = Estimate$rho2
+  sigma1H = Estimate$sigma1
+  sigma2H = Estimate$sigma2
+  sigma3H = Estimate$sigma3
+  objVec = Estimate$objVec
+  pv <- 2 * stats::pnorm(-abs(a0H / sqrt(a0Var)))
+  Time = Estimate$Time 
+  return(list("a0" = a0H, "a0Var" = a0Var, "a1" = a1H, "a3" = a3H,
+              "sigma1" = sigma1H, "sigma2" = sigma2H, "sigma3" = sigma3H,
+              "rho1" = rho1H, "rho2" = rho2H, 
+              "beta" = betaH,"objVec" = objVec, "Time" = Time, "p.value" = pv))
+}
+
+
+oneReplicateWrap_ReMeasure_Rcpp_S2 = function(seedJ) {
+  eval = oneReplicate_ReMeasure_Rcpp_S2(seedJ)
+  return(eval)
+}
+
+
+

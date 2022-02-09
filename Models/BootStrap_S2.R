@@ -119,9 +119,9 @@ Estimate_ReMeasure_S2_Res = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3,
     out_b = Estimate_ReMeasure_S2(Zc1, Zt2, Zc3, Zt3, Yc1_b, Yt2_b, Yc3_b, Yt3_b,
                                   Index_C, Index_T, tol.c)
     ztest_b[j] = (out_b$a0-a0_hat)/sqrt(out_b$a0Var)
-    if ( j%%200 == 0) {
-      print(j)
-    }
+    # if ( j%%200 == 0) {
+    #   print(j)
+    # }
   }
   Time = proc.time()[1] - start
   return(list("a0" = a0_hat, "a0Var" = a0Var, "a1" = a1_hat, "a3"=a3_hat,

@@ -248,7 +248,9 @@ loglik.r2 <- function (paras, Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2) {
 	
 
 	rho1 <- (1 - exp(paras[p + 7])) / (1 + exp(paras[p + 7]))
-	rho2 <- sqrt(v1 / v2)
+	## Modify this 
+	rho2 = (1 - exp(paras[p + 8])) / (1 + exp(paras[p + 8]))
+	# rho2 <- sqrt(v1 / v2)
 	
 	mu <- Z %*% b + XX %*% c(a0, a1)
 	s2 <- c(v1, v2)[X + 1]
@@ -259,16 +261,17 @@ loglik.r2 <- function (paras, Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2) {
 	s2.r1 <- rep((1 - rho1^2) * v3, n1)
 	
 	Z.r2 <- Z[ind.r2, ]
-	Y.o2 <- Y[ind.r12]
+	Y.o2 <- Y[ind.r2]
 	mu.r2 <- a2 + Z.r2 %*% b + rho2 * sqrt(v3 / v2) * (Y.o2 - Z.r2 %*% b)
 	s2.r2 <- rep((1 - rho2^2) * v3, n2)
 	
-	-sum(stats::dnorm(c(Y, Y.r), mean = c(mu, mu.r1, mu.r2), sd = sqrt(c(s2, s2.r1, s2.r2)), log = TRUE))
+	-sum(stats::dnorm(c(Y, Y.r1, Y.r2), mean = c(mu, mu.r1, mu.r2), sd = sqrt(c(s2, s2.r1, s2.r2)), log = TRUE))
 	
 }
 
 batch.correct.r2 <- function (Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2, start = NULL, method = 'BFGS') {
 	# Z include the intercept
+  start_S2 = proc.time()[1]
 	call <- match.call()
 	if (is.null(start)) {
 		
@@ -284,14 +287,17 @@ batch.correct.r2 <- function (Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2, start = NULL,
 		lm.coef <- coef(lm.obj)
 		c1 <- lm.coef[1] - c2
 		c4 <- lm.coef[2 : length(lm.coef)]
-		c5 <- c6 <-  log(sigma(lm.obj)^2)
-		c7 <- cor(Y.o1 - resid(lm.obj)[ind.r1], Y.r1 - resid(lm.obj)[ind.r1])
-		c7 <- log((1 - c7) / (1 + c7))
+		c5 <- c6 <- c7 <- log(sigma(lm.obj)^2)
+		c8 <- cor(Y.o1 - resid(lm.obj)[ind.r1], Y.r1 - resid(lm.obj)[ind.r1])
+		c8 <- log((1 - c8) / (1 + c8))
+		c9 <- cor(Y.o2 - resid(lm.obj)[ind.r2], Y.r2 - resid(lm.obj)[ind.r2])
+		c9 <- log((1 - c9) / (1 + c9))
 		
-		start <- c(c1, c2, c3, c4, c6, c6, c7)
+		start <- c(c1, c2, c3, c4, c5, c6, c7, c8, c9)
 	}
 	
-	oout <- stats::optim(start, loglik.r1, method = method, hessian = TRUE, 
+	p = ncol(Z)
+	oout <- stats::optim(start, loglik.r2, method = method, hessian = TRUE, 
 			Y = Y, X = X, Z = Z, ind.r1 = ind.r1, ind.r2 = ind.r2,  Y.r1 = Y.r1, Y.r2 = Y.r2)
 	coef <- oout$par
 	try.obj <- try({	vcov <- solve(oout$hessian)
@@ -300,8 +306,21 @@ batch.correct.r2 <- function (Y, X, Z, ind.r1, ind.r2, Y.r1, Y.r2, start = NULL,
 	if (class(try.obj) == 'try-error') {
 		pv <- NA
 	}
-	return(list(call = call, p.value = pv, optim.out = oout, optim.st = start ))
-	
+	a0H = as.numeric(coef[1])
+	a1H = as.numeric(coef[2])
+	a3H = as.numeric(coef[3])
+	betaH = as.vector(coef[4 : (p+3) ]) 
+	sigma1H = exp(coef[p+4]/2)
+	sigma2H = exp(coef[p+5]/2)
+	sigma3H = exp(coef[p+6]/2)
+	rho1H = (1 - exp(coef[p+7]) )/(1 + exp(coef[p+7]))
+	rho2H = (1 - exp(coef[p+8]) )/(1 + exp(coef[p+8]))
+	a0Var = as.numeric(vcov[1, 1])
+	Time_S2 = proc.time()[1] - start_S2
+	# return(list(call = call, p.value = pv, optim.out = oout, optim.st = start ))
+	return(list("a0"=a0H, "a0Var"=a0Var, "a1"=a1H, "a3" = a3H, "sigma1"=sigma1H,
+	            "sigma2"=sigma2H, "sigma3"=sigma3H, "rho1"=rho1H, "rho2"=rho2H,
+	            "beta" = NULL, "objVec"=NULL, "Time"=Time_S2 ))
 }
 
 

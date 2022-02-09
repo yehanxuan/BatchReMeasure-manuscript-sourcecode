@@ -503,8 +503,6 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
   E = solve(S, E0)
   G = solve(S, G0)
 
-
-
   a = (R1*rep(1, nc3)/nc3 - t(A)%*%k)
   c = -R2*(1 - ratioT)*rep(1, nt3)/nt3 - t(C)%*%k
   e = -rep(1, nc3)/nc3 - t(E)%*%k
@@ -523,111 +521,131 @@ S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma
 }
 
 
-# S2_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1H, sigma2H, sigma3H,
-#                           rho1H, rho2H, Index_C, Index_T) {
-#   nc1 = nrow(Zc1)
-#   nt2 = nrow(Zt2)
-#   nc3 = nrow(Zc3)
-#   nt3 = nrow(Zt3)
-# 
-# 
-# 
-#   ratioC = nc3/nc1
-#   ratioT = nt3/nt2
-#   R1 = rho1H*sigma3H/sigma1H
-#   R2 = rho2H*sigma3H/sigma2H
-# 
-#   Ztilde1 = (1 - R1)*Zc3
-#   Cov1 = t(Zc1)%*%Zc1/(sigma1H^2)
-#   Cov2 = t(Ztilde1)%*%t(t(Ztilde1) - colMeans(Ztilde1) )/( (sigma3H^2)*(1 - rho1H^2) )
-# 
-#   # Cov3 = (1 - ratioT)/(sigma2H^2)*t(Zt3)%*%Zt3
-#   # Cov3 = Cov3 + ( (1 - rho2H*sigma3H/sigma2H)^2*(1 - ratioC)/(sigma3H^2*(1 - rho2H^2)) +
-#   #   ratioT/(sigma2H^2*(1 - rho2H^2)) + ratioT/(sigma3H^2*(1 - rho2H^2)) -
-#   #   2*rho2H*ratioT/(sigma2H*sigma3H*(1 - rho2H^2)) )*t(Zt3)%*% t( t(Zt3) - colMeans(Zt3))
-#   Zt3c =  rep(1, nt3)%*% t(rep(1, nt3))%*%Zt3/nt3
-#   Cov3 =  (1/(sigma2H^2*(1 - rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2))  ) *
-#     t(Zt3) %*% (Zt3 - nt3*Zt3c/nt2 )
-# 
-#   Cov3 = Cov3 + (1 - R2)*t(Zt3)%*%( Zt3 - Zt3c + R2*(1 - ratioT)*Zt3c )/(sigma3H^2*(1 - rho2H^2))
-# 
-#   if (nt3 == nt2) {
-#     Cov4 = 0
-#     Cov5 = 0
-#   } else {
-#     Zt2cs =  Zt2[-Index_T, , drop = F]
-#     Cov4 = t(Zt2cs)%*%Zt2cs/(sigma3H^2)  # sigma2H??
-#     Cov5 = -(1 - ratioT)*t(Zt3)%*%rep(1, nt3)%*%colMeans(Zt2cs)/(sigma2H^2)
-#   }
-# 
-#   S = Cov1 + Cov2 + Cov3 + Cov4 + Cov5
-# 
-# 
-# 
-#   if (nt3 == nt2) {
-#     k = colMeans(Zt3) - colMeans(Zc3) + R1*colMeans(Zc3)
-#   } else {
-#     k = colMeans(Zt3) - colMeans(Zc3) + R1*colMeans(Zc3) -
-#       R2*(1 - ratioT)*(colMeans(Zt3) - colMeans(Zt2[-Index_T, , drop = F]))
-#   }
-# 
-#   A0 = t(Zc3)/(sigma2H^2) -
-#     R1*(1 - R1)*t(Zc3)%*%(diag(nc3) - rep(1,nc3)%*%t(rep(1,nc3))/nc3 )/(sigma3H^2*(1 - rho1H^2))
-#   if (nc3 == nc1) {
-#     B0= 0
-#     b = 0
-#   } else {
-#     B0 = t(Zc1[-Index_C, , drop = F])/(sigma1H^2)
-#     B = solve(S, B0)
-#     b = -t(B)%*%k
-#   }
-# 
-# 
-#   C0 = t(Zt3)%*%(diag(nt3) - ratioT*rep(1,nt3)%*%t(rep(1,nt3))/nt3)*
-#     (1/(sigma2H^2*(1-rho2H^2)) - rho2H/(sigma2H*sigma3H*(1 - rho2H^2)) )
-#   C0 = C0 + R2*(1 - R2)*(1 - ratioT)*t(Zt3)%*%(rep(1,nt3)%*%t(rep(1,nt3))/nt3)/
-#     (sigma3H^2*(1 - rho2H^2))
-# 
-#   if (nt3 == nt2) {
-#     D0 = 0
-#     d = 0
-#   } else {
-#     D0 = (1 - ratioT)*t(Zt3)%*%( rep(1, nt3)%*%t(rep(1, nt2 - nt3))/(nt2 - nt3) )*
-#       (-1/(sigma2H^2*(1-rho2H^2)) + rho2H/(sigma2H*sigma3H*(1 - rho2H^2)))
-#     D0 = D0 - (1 - R2)*R2*(1 - ratioT)*t(Zt3)%*%( rep(1, nt3)%*%t(rep(1, nt2 - nt3))/(nt2 - nt3) )/
-#       ( sigma3H^2*(1 - rho2H^2) )
-#     D = solve(S, D0)
-#     d = R2*(1 - ratioT)*rep(1, nt2 - nt3)/(nt2 - nt3) - t(D)%*%k
-#   }
-# 
-# 
-#   E0 = (1 - R1)*t(Zc3)%*%(diag(nc3) - rep(1, nc3)%*%t(rep(1, nc3))/nc3 )/(sigma3H^2*(1 - rho1H^2))
-#   G0 = (1 - R2)*t(Zt3)%*%(diag(nt3) - rep(1, nt3)%*%t(rep(1, nt3))/nt3 )/(sigma3H^2*(1 - rho2H^2))
-# 
-#   A = solve(S, A0)
-#   C = solve(S, C0)
-#   E = solve(S, E0)
-#   G = solve(S, G0)
-# 
-# 
-# 
-#   a = (R1*rep(1, nc3)/nc3 - t(A)%*%k)
-#   c = -R2*(1 - ratioT)*rep(1, nt3)/nt3 - t(C)%*%k
-#   e = -rep(1, nc3)/nc3 - t(E)%*%k
-#   f = rep(1, nt3)/nt3 - t(G)%*%k
-# 
-#   
-#   Var = (sigma1H^2) * (t(a)%*%a + t(b)%*%b) +
-#     (sigma2H^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3H^2) * (t(e)%*%e + t(f)%*%f)+
-#     2*rho1H*sigma1H*sigma3H*(t(a)%*%e) + 2*rho2H*sigma2H*sigma3H*(t(c)%*%f)
-#   
-#   # Var = (sigma1^2) * (t(a)%*%a + t(b)%*%b) +
-#   #   (sigma2^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3^2) * (t(e)%*%e + t(f)%*%f)+
-#   #   2*rho1*sigma1*sigma3*(t(a)%*%e) + 2*rho2*sigma2*sigma3*(t(c)%*%f)
-# 
-#   Var = as.numeric(Var)
-#   return(Var)
-# }
+S2_Oracle_Variance_a0 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, sigma1, sigma2, sigma3,
+                          rho1, rho2, Index_C, Index_T) {
+  nc1 = nrow(Zc1)
+  nt2 = nrow(Zt2)
+  nc3 = nrow(Zc3)
+  nt3 = nrow(Zt3)
+  ratioC = nc3/nc1
+  ratioT = nt3/nt2
+  
+  R1 = as.numeric( rho1*sigma3/sigma1 )
+  R2 = as.numeric( rho2*sigma3/sigma2 )
+  rho1H = as.numeric(rho1)
+  rho2H = as.numeric(rho2)
+  
+  Zc_scale = t( t(Zc3) - (1 - R1) * colMeans(Zc3) )
+  Cov1 = (t(Zc3)%*%Zc3/sigma1^2 -
+            2*t(Zc3)%*%Zc_scale*as.numeric(rho1)/(sigma1*sigma3)+
+            t(Zc_scale)%*%Zc_scale/sigma3^2 )/(1 - rho1^2)
+  
+  
+  if (ratioC != 1){
+    Zc1cs = Zc1[-Index_C, , drop = F]
+    Cov2 = t(Zc1cs)%*%Zc1cs/sigma1^2
+  } else {
+    Cov2 = 0
+  }
+  
+  Zt2_scale = t(Zt3) - ratioT*colMeans(Zt3)
+  Yt2_scale = Yt2[Index_T] - ratioT*mean(Yt2[Index_T])
+  Zt3_scale = t(Zt3) - colMeans(Zt3)
+  Yt3_scale = Yt3 - mean(Yt3)
+  
+  
+  if (nt3 != nt2) {
+    Zt2_scale = Zt2_scale - (1 - ratioT)*colMeans(Zt2[-Index_T, ])
+    Yt2_scale = Yt2_scale - (1 - ratioT)*mean(Yt2[-Index_T])
+    
+    Zt3_scale = Zt3_scale +
+      R2*(1 - ratioT)*(colMeans(Zt3) - colMeans(Zt2[-Index_T, ]))
+    Yt3_scale = Yt3_scale + R2*(1-ratioT)*( mean(Yt2[Index_T]) - mean(Yt2[-Index_T]) )
+    
+    Zt2ts = Zt2[-Index_T, ,drop = F]
+    ts_scale = t( t(Zt2ts) - ratioT*colMeans(Zt3) - (1 - ratioT)*colMeans(Zt2ts) )
+    Cov4 = t(ts_scale)%*%ts_scale/(sigma2^2)
+  } else {
+    Cov4 = 0
+  }
+  Zt2_scale = t(Zt2_scale)
+  Zt3_scale = t(Zt3_scale)
+  
+  Cov3 = (t(Zt2_scale)%*%Zt2_scale/sigma2^2 -
+            2*t(Zt2_scale)%*%Zt3_scale*rho2/(sigma2*sigma3)+
+            t(Zt3_scale)%*%Zt3_scale/sigma3^2)/(1 - rho2^2)
+  S = Cov1 + Cov2 + Cov3 + Cov4
+  
+  
+  k = colMeans(Zt3) - colMeans(Zc3) + R1*colMeans(Zc3)
+  if (nt3 != nt2) {
+    k = k - R2*(1 - ratioT)*(colMeans(Zt3) - colMeans(Zt2[-Index_T, , drop = F]))
+  }
+  
+  
+  A0 = t(Zc3)/sigma1^2 - t(Zc_scale)*rho1/(sigma1*sigma3) -
+    (R1*colMeans(Zc3)%*%t(rep(1,nc3)))*rho1/(sigma1*sigma3) +
+    R1*colMeans(Zc_scale)%*%t(rep(1,nc3) )/sigma3^2
+  A0 = A0/(1 - rho1^2)
+  
+  if (ratioC != 1){
+    B0 = t(Zc1cs)/(sigma1^2)
+    B = solve(S, B0)
+    b = -t(B)%*%k
+  } else {
+    B0 = 0
+    b = 0
+  }
+  
+  E0 = - ( t(Zc3) - colMeans(Zc3)%*%t(rep(1,nc3)) )*rho1H/(sigma1*sigma3) +
+    ( t(Zc_scale) - colMeans(Zc_scale)%*%t(rep(1,nc3)))/(sigma3^2)
+  E0 = E0/(1-rho1^2)
+  
+  ## seems the same in between
+  C0 = (t(Zt2_scale) - ratioT*colMeans(Zt2_scale)%*%t(rep(1, nt3)))/sigma2^2 -
+    (t(Zt3_scale) - ratioT*colMeans(Zt3_scale)%*%t(rep(1, nt3)))*rho2/(sigma2*sigma3)
+  
+  C0 = C0/(1 - rho2^2)
+  if (nt3 != nt2) {
+    C0 = C0 - (ratioT*t(ts_scale)%*%rep(1, nt2-nt3)%*%t(rep(1, nt3))/nt3)/sigma2^2
+  }
+  
+  
+  if (nt3 == nt2) {
+    D0 = 0
+    d = 0
+  } else {
+    D0 = -(1-ratioT)*t(Zt2_scale)%*%rep(1, nt3)%*%t(rep(1, nt2 - nt3)/(nt2 - nt3))/sigma2^2 +
+      (1-ratioT)*t(Zt3_scale)%*%rep(1,nt3)%*%t(rep(1, nt2 - nt3)/(nt2 - nt3))*rho2/(sigma2*sigma3)
+    D0 = D0/(1 - rho2^2)
+    D0 = D0 + (t(ts_scale) - (1-ratioT)*colMeans(ts_scale)%*%t(rep(1, nt2 - nt3)))/sigma2^2
+    
+    D = solve(S, D0)
+    d = R2*(1 - ratioT)*rep(1, nt2 - nt3)/(nt2 - nt3) - t(D)%*%k
+  }
+  
+  G0 = (t(Zt3_scale) - colMeans(Zt3_scale)%*%t(rep(1, nt3)))/sigma3^2 -
+    (t(Zt2_scale) - colMeans(Zt2_scale)%*%t(rep(1, nt3)))*rho2/(sigma2*sigma3)
+  G0 = G0/(1 - rho2^2)
+  
+  A = solve(S, A0)
+  C = solve(S, C0)
+  E = solve(S, E0)
+  G = solve(S, G0)
+  
+  a = (R1*rep(1, nc3)/nc3 - t(A)%*%k)
+  c = -R2*(1 - ratioT)*rep(1, nt3)/nt3 - t(C)%*%k
+  e = -rep(1, nc3)/nc3 - t(E)%*%k
+  f = rep(1, nt3)/nt3 - t(G)%*%k
+  
+  Var = (sigma1^2) * (t(a)%*%a + t(b)%*%b) +
+   (sigma2^2) * (t(c)%*%c + t(d)%*%d ) + (sigma3^2) * (t(e)%*%e + t(f)%*%f)+
+   2*rho1*sigma1*sigma3*(t(a)%*%e) + 2*rho2*sigma2*sigma3*(t(c)%*%f)
+  
+  Var = as.numeric(Var)
+  return(Var)
+}
+
 
 Estimate_ReMeasure_S2 = function(Zc1, Zt2, Zc3, Zt3, Yc1, Yt2, Yc3, Yt3, Index_C, Index_T, 
                                  tol.c = 1e-7, a0.Ini = NULL, a1.Ini = NULL, a3.Ini = NULL,
