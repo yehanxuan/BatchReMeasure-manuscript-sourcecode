@@ -4,7 +4,6 @@ library(ggplot2)
 library(reshape)
 require(cowplot)
 library(latex2exp)
-source("./Models/ReMeasure_S1.R")
 method = "ReMeasure"
 ns = c(100, 200, 400)
 a1s=a1= 0.5
