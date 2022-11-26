@@ -23,6 +23,7 @@ source("./code/CorFunc.R")
 ```
 Set the total sample size as 100 with 50 control and case samples. Set the standard deviation as 2; The 'Strong' correlation, 'Moderate' true effect, and 'Negative' batch effect are 0.9, 0.5, and -0.5, respectively.  
 ```{r}
+set.seed(7)
 data.obj <- SimulateData(total.size = 100, remeasure.size = 30, 
              scale = 2, correlation = 'Strong', true.effect = "Moderate", batch.effect = 'Negative')
 # 0 represents control samples and 1 represents the case samples
