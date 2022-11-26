@@ -22,7 +22,7 @@ a0 = as.numeric(args[6])
 a1 = as.numeric(args[7])
 repID = as.numeric(args[8])
 
- method = "Gen"
+ method = "ReMeasure"
  n = 100
  n1 = 40
  r1 = 1
