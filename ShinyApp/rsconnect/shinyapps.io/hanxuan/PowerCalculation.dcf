@@ -5,10 +5,10 @@ account: hanxuan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6679764
-bundleId: 6125238
+bundleId: 7054018
 url: https://hanxuan.shinyapps.io/PowerCalculation/
-when: 1658543152.13595
-lastSyncTime: 1658543152.13596
+when: 1680720613.76025
+lastSyncTime: 1680720613.76026
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: App_new.R|Powerplot1.pdf|Powerplot2.pdf
+ignoredFiles: Powerplot1.pdf|Powerplot2.pdf
