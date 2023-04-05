@@ -1,0 +1,14 @@
+name: PowerCalculation
+title: PowerCalculation
+username:
+account: hanxuan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6679764
+bundleId: 6125238
+url: https://hanxuan.shinyapps.io/PowerCalculation/
+when: 1658543152.13595
+lastSyncTime: 1658543152.13596
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: App_new.R|Powerplot1.pdf|Powerplot2.pdf

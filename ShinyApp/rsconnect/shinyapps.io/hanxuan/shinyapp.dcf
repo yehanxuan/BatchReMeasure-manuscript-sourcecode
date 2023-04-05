@@ -1,0 +1,14 @@
+name: shinyapp
+title:
+username:
+account: hanxuan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6679540
+bundleId: 6124350
+url: https://hanxuan.shinyapps.io/shinyapp/
+when: 1658516166.36073
+lastSyncTime: 1658516166.36073
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: App_new.R
